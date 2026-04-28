@@ -381,10 +381,16 @@ function updateSelectedDateSummary() {
 }
 
 function updateCalendarHeader() {
-  monthViewBtn.classList.toggle("is-active", currentCalendarView === "month");
-  weekViewBtn.classList.toggle("is-active", currentCalendarView === "week");
-  monthCalendarView.classList.toggle("hidden", currentCalendarView !== "month");
-  weekCalendarView.classList.toggle("hidden", currentCalendarView !== "week");
+  const isMonthView = currentCalendarView === "month";
+
+  monthViewBtn.classList.toggle("is-active", isMonthView);
+  weekViewBtn.classList.toggle("is-active", !isMonthView);
+  monthViewBtn.setAttribute("aria-pressed", String(isMonthView));
+  weekViewBtn.setAttribute("aria-pressed", String(!isMonthView));
+  monthCalendarView.classList.toggle("hidden", !isMonthView);
+  weekCalendarView.classList.toggle("hidden", isMonthView);
+  monthCalendarView.hidden = !isMonthView;
+  weekCalendarView.hidden = isMonthView;
 
   if (currentCalendarView === "week") {
     calendarMonthLabel.textContent = formatWeekRange(currentCalendarDate);

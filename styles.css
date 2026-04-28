@@ -434,6 +434,11 @@ h2 {
   display: block;
 }
 
+.calendar-view.hidden,
+.calendar-view[hidden] {
+  display: none;
+}
+
 .calendar-weekdays,
 .calendar-grid {
   display: grid;
