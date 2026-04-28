@@ -394,14 +394,18 @@ function updateCalendarHeader() {
 
   if (currentCalendarView === "week") {
     calendarMonthLabel.textContent = formatWeekRange(currentCalendarDate);
-    prevMonthBtn.textContent = "Semana anterior";
-    nextMonthBtn.textContent = "Semana siguiente";
+    prevMonthBtn.textContent = "Anterior";
+    nextMonthBtn.textContent = "Siguiente";
+    prevMonthBtn.setAttribute("aria-label", "Semana anterior");
+    nextMonthBtn.setAttribute("aria-label", "Semana siguiente");
     return;
   }
 
   calendarMonthLabel.textContent = formatCalendarMonth(currentCalendarDate);
-  prevMonthBtn.textContent = "Mes anterior";
-  nextMonthBtn.textContent = "Mes siguiente";
+  prevMonthBtn.textContent = "Anterior";
+  nextMonthBtn.textContent = "Siguiente";
+  prevMonthBtn.setAttribute("aria-label", "Mes anterior");
+  nextMonthBtn.setAttribute("aria-label", "Mes siguiente");
 }
 
 function renderMonthCalendar() {

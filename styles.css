@@ -481,26 +481,50 @@ h2 {
 }
 
 .calendar-toolbar {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
   gap: 12px;
-  align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.calendar-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.calendar-heading .small-note {
+  max-width: 56ch;
+  margin-bottom: 0;
+}
+
+.calendar-action-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.6fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
 }
 
 .calendar-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(82px, auto) minmax(130px, 1fr) minmax(82px, auto) auto;
+  gap: 6px;
   align-items: center;
-  justify-content: flex-end;
 }
 
 .calendar-view-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid #d6e3f5;
+  border-radius: 14px;
+  background: #eff4fb;
+}
+
+.calendar-view-switch .ghost-btn {
+  min-height: 38px;
+  border-radius: 0;
+  background: transparent;
+  color: #334155;
 }
 
 .calendar-view-switch .ghost-btn.is-active {
@@ -510,7 +534,15 @@ h2 {
 
 .calendar-month-label {
   margin: 0;
-  min-width: 150px;
+  min-height: 38px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   font-weight: 700;
   color: var(--text);
@@ -777,6 +809,10 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .calendar-action-row {
+    grid-template-columns: 1fr;
+  }
+
   .task-list-panel,
   .task-list-panel .task-list {
     max-height: none;
@@ -816,6 +852,21 @@ h2 {
   .calendar-month-label {
     justify-content: stretch;
     text-align: left;
+  }
+
+  .calendar-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .calendar-month-label {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-content: center;
+    text-align: center;
+  }
+
+  #resetCalendarBtn {
+    grid-column: 1 / -1;
   }
 
   .calendar-view-switch {

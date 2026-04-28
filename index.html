@@ -140,21 +140,23 @@
         <div class="planner-layout">
           <section class="calendar-panel" aria-labelledby="calendarTitle">
             <div class="calendar-toolbar">
-              <div>
+              <div class="calendar-heading">
                 <h3 id="calendarTitle">Calendario visual</h3>
                 <p id="selectedDateSummary" class="small-note">
                   Selecciona un dia para ver rapidamente las actividades pendientes.
                 </p>
+              </div>
+              <div class="calendar-action-row">
                 <div class="calendar-view-switch" role="group" aria-label="Cambiar vista del calendario">
                   <button id="monthViewBtn" class="ghost-btn is-active" type="button" aria-pressed="true">Vista mensual</button>
                   <button id="weekViewBtn" class="ghost-btn" type="button" aria-pressed="false">Vista semanal</button>
                 </div>
-              </div>
-              <div class="calendar-controls">
-                <button id="prevMonthBtn" class="ghost-btn" type="button">Mes anterior</button>
-                <p id="calendarMonthLabel" class="calendar-month-label" aria-live="polite"></p>
-                <button id="nextMonthBtn" class="ghost-btn" type="button">Mes siguiente</button>
-                <button id="resetCalendarBtn" class="secondary-btn" type="button">Quitar fecha</button>
+                <div class="calendar-controls" aria-label="Navegar calendario">
+                  <button id="prevMonthBtn" class="ghost-btn" type="button">Mes anterior</button>
+                  <p id="calendarMonthLabel" class="calendar-month-label" aria-live="polite"></p>
+                  <button id="nextMonthBtn" class="ghost-btn" type="button">Mes siguiente</button>
+                  <button id="resetCalendarBtn" class="secondary-btn" type="button">Quitar fecha</button>
+                </div>
               </div>
             </div>
             <div id="monthCalendarView" class="calendar-view">
