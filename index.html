@@ -21,159 +21,170 @@
       </button>
     </section>
 
-    <section class="card">
-      <div class="section-title-row">
-        <h2 id="formTitle">Nueva tarea</h2>
-        <button id="cancelEditBtn" class="ghost-btn hidden" type="button">Cancelar edicion</button>
-      </div>
-      <form id="taskForm" class="task-form">
-        <label>
-          Fecha
-          <input id="taskDate" name="taskDate" type="date" required>
-        </label>
-
-        <label class="activity-field">
-          Actividad
-          <input id="taskActivity" name="taskActivity" type="text" maxlength="120" placeholder="Ejemplo: entregar informe" required>
-        </label>
-
-        <label>
-          Hora
-          <input id="taskTime" name="taskTime" type="time" required>
-        </label>
-
-        <label>
-          Aviso previo
-          <select id="taskReminder" name="taskReminder">
-            <option value="0">Al momento</option>
-            <option value="5">5 minutos antes</option>
-            <option value="10">10 minutos antes</option>
-            <option value="15">15 minutos antes</option>
-            <option value="30">30 minutos antes</option>
-          </select>
-        </label>
-
-        <label>
-          Prioridad
-          <select id="taskPriority" name="taskPriority">
-            <option value="low">Baja</option>
-            <option value="medium" selected>Media</option>
-            <option value="high">Alta</option>
-          </select>
-        </label>
-
-        <label class="checkbox-line">
-          <input id="taskAlarm" name="taskAlarm" type="checkbox" checked>
-          Activar alarma de cumplimiento
-        </label>
-
-        <button id="submitTaskBtn" class="primary-btn" type="submit">Guardar tarea</button>
-      </form>
-    </section>
-
-    <section class="card message-card">
-      <div class="section-title-row">
-        <h2>Mensajeria de alertas</h2>
-        <button id="clearMessagesBtn" class="ghost-btn" type="button">Limpiar</button>
-      </div>
-      <div id="messageArea" class="message-area" aria-live="polite">
-        <p class="empty-message">Aqui apareceran las alertas y recordatorios.</p>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="section-title-row">
-        <div>
-          <h2>Mis tareas</h2>
-          <div class="legend-group">
-            <span class="legend-pill pending">Pendiente</span>
-            <span class="legend-pill soon">Proxima</span>
-            <span class="legend-pill overdue">Urgente</span>
-            <span class="legend-pill completed">Completada</span>
-            <span class="legend-pill priority-high">Prioridad alta</span>
-            <span class="legend-pill priority-medium">Prioridad media</span>
-            <span class="legend-pill priority-low">Prioridad baja</span>
+    <div class="dashboard-layout">
+      <aside class="sidebar-column" aria-label="Crear tareas y alertas">
+        <section class="card task-editor-card">
+          <div class="section-title-row">
+            <h2 id="formTitle">Nueva tarea</h2>
+            <button id="cancelEditBtn" class="ghost-btn hidden" type="button">Cancelar edicion</button>
           </div>
-        </div>
-      </div>
-      <div class="filters-bar">
-        <label class="filter-wide">
-          Buscar actividad
-          <input id="searchFilter" type="text" placeholder="Buscar por nombre de tarea">
-        </label>
-        <label>
-          Filtrar por estado
-          <select id="statusFilter">
-            <option value="all">Todos</option>
-            <option value="pending">Pendientes</option>
-            <option value="soon">Proximas</option>
-            <option value="overdue">Urgentes</option>
-            <option value="completed">Completadas</option>
-          </select>
-        </label>
-        <label>
-          Filtrar por fecha
-          <input id="dateFilter" type="date">
-        </label>
-        <label>
-          Filtrar por prioridad
-          <select id="priorityFilter">
-            <option value="all">Todas</option>
-            <option value="high">Alta</option>
-            <option value="medium">Media</option>
-            <option value="low">Baja</option>
-          </select>
-        </label>
-        <label>
-          Periodo rapido
-          <select id="periodFilter">
-            <option value="all">Todos</option>
-            <option value="today">Hoy</option>
-            <option value="week">Esta semana</option>
-          </select>
-        </label>
-        <button id="clearFiltersBtn" class="ghost-btn" type="button">Limpiar filtros</button>
-      </div>
-      <p id="resultsSummary" class="small-note">Mostrando todas las tareas.</p>
-      <section class="calendar-panel" aria-labelledby="calendarTitle">
-        <div class="calendar-toolbar">
+          <form id="taskForm" class="task-form">
+            <label>
+              Fecha
+              <input id="taskDate" name="taskDate" type="date" required>
+            </label>
+
+            <label class="activity-field">
+              Actividad
+              <input id="taskActivity" name="taskActivity" type="text" maxlength="120" placeholder="Ejemplo: entregar informe" required>
+            </label>
+
+            <label>
+              Hora
+              <input id="taskTime" name="taskTime" type="time" required>
+            </label>
+
+            <label>
+              Aviso previo
+              <select id="taskReminder" name="taskReminder">
+                <option value="0">Al momento</option>
+                <option value="5">5 minutos antes</option>
+                <option value="10">10 minutos antes</option>
+                <option value="15">15 minutos antes</option>
+                <option value="30">30 minutos antes</option>
+              </select>
+            </label>
+
+            <label>
+              Prioridad
+              <select id="taskPriority" name="taskPriority">
+                <option value="low">Baja</option>
+                <option value="medium" selected>Media</option>
+                <option value="high">Alta</option>
+              </select>
+            </label>
+
+            <label class="checkbox-line">
+              <input id="taskAlarm" name="taskAlarm" type="checkbox" checked>
+              Activar alarma de cumplimiento
+            </label>
+
+            <button id="submitTaskBtn" class="primary-btn" type="submit">Guardar tarea</button>
+          </form>
+        </section>
+
+        <section class="card message-card">
+          <div class="section-title-row">
+            <h2>Mensajeria de alertas</h2>
+            <button id="clearMessagesBtn" class="ghost-btn" type="button">Limpiar</button>
+          </div>
+          <div id="messageArea" class="message-area" aria-live="polite">
+            <p class="empty-message">Aqui apareceran las alertas y recordatorios.</p>
+          </div>
+        </section>
+      </aside>
+
+      <section class="card tasks-card">
+        <div class="section-title-row">
           <div>
-            <h3 id="calendarTitle">Calendario visual</h3>
-            <p id="selectedDateSummary" class="small-note">
-              Selecciona un dia para ver rapidamente las actividades pendientes.
-            </p>
-            <div class="calendar-view-switch" role="group" aria-label="Cambiar vista del calendario">
-              <button id="monthViewBtn" class="ghost-btn is-active" type="button" aria-pressed="true">Vista mensual</button>
-              <button id="weekViewBtn" class="ghost-btn" type="button" aria-pressed="false">Vista semanal</button>
+            <h2>Mis tareas</h2>
+            <div class="legend-group">
+              <span class="legend-pill pending">Pendiente</span>
+              <span class="legend-pill soon">Proxima</span>
+              <span class="legend-pill overdue">Urgente</span>
+              <span class="legend-pill completed">Completada</span>
+              <span class="legend-pill priority-high">Prioridad alta</span>
+              <span class="legend-pill priority-medium">Prioridad media</span>
+              <span class="legend-pill priority-low">Prioridad baja</span>
             </div>
           </div>
-          <div class="calendar-controls">
-            <button id="prevMonthBtn" class="ghost-btn" type="button">Mes anterior</button>
-            <p id="calendarMonthLabel" class="calendar-month-label" aria-live="polite"></p>
-            <button id="nextMonthBtn" class="ghost-btn" type="button">Mes siguiente</button>
-            <button id="resetCalendarBtn" class="secondary-btn" type="button">Quitar fecha</button>
-          </div>
         </div>
-        <div id="monthCalendarView" class="calendar-view">
-          <div class="calendar-weekdays" aria-hidden="true">
-            <span>Lun</span>
-            <span>Mar</span>
-            <span>Mie</span>
-            <span>Jue</span>
-            <span>Vie</span>
-            <span>Sab</span>
-            <span>Dom</span>
-          </div>
-          <div id="calendarGrid" class="calendar-grid"></div>
+        <div class="filters-bar">
+          <label class="filter-wide">
+            Buscar actividad
+            <input id="searchFilter" type="text" placeholder="Buscar por nombre de tarea">
+          </label>
+          <label>
+            Filtrar por estado
+            <select id="statusFilter">
+              <option value="all">Todos</option>
+              <option value="pending">Pendientes</option>
+              <option value="soon">Proximas</option>
+              <option value="overdue">Urgentes</option>
+              <option value="completed">Completadas</option>
+            </select>
+          </label>
+          <label>
+            Filtrar por fecha
+            <input id="dateFilter" type="date">
+          </label>
+          <label>
+            Filtrar por prioridad
+            <select id="priorityFilter">
+              <option value="all">Todas</option>
+              <option value="high">Alta</option>
+              <option value="medium">Media</option>
+              <option value="low">Baja</option>
+            </select>
+          </label>
+          <label>
+            Periodo rapido
+            <select id="periodFilter">
+              <option value="all">Todos</option>
+              <option value="today">Hoy</option>
+              <option value="week">Esta semana</option>
+            </select>
+          </label>
+          <button id="clearFiltersBtn" class="ghost-btn" type="button">Limpiar filtros</button>
         </div>
-        <div id="weekCalendarView" class="calendar-view hidden" hidden>
-          <div id="weekCalendarGrid" class="week-calendar-grid"></div>
+        <div class="planner-layout">
+          <section class="calendar-panel" aria-labelledby="calendarTitle">
+            <div class="calendar-toolbar">
+              <div>
+                <h3 id="calendarTitle">Calendario visual</h3>
+                <p id="selectedDateSummary" class="small-note">
+                  Selecciona un dia para ver rapidamente las actividades pendientes.
+                </p>
+                <div class="calendar-view-switch" role="group" aria-label="Cambiar vista del calendario">
+                  <button id="monthViewBtn" class="ghost-btn is-active" type="button" aria-pressed="true">Vista mensual</button>
+                  <button id="weekViewBtn" class="ghost-btn" type="button" aria-pressed="false">Vista semanal</button>
+                </div>
+              </div>
+              <div class="calendar-controls">
+                <button id="prevMonthBtn" class="ghost-btn" type="button">Mes anterior</button>
+                <p id="calendarMonthLabel" class="calendar-month-label" aria-live="polite"></p>
+                <button id="nextMonthBtn" class="ghost-btn" type="button">Mes siguiente</button>
+                <button id="resetCalendarBtn" class="secondary-btn" type="button">Quitar fecha</button>
+              </div>
+            </div>
+            <div id="monthCalendarView" class="calendar-view">
+              <div class="calendar-weekdays" aria-hidden="true">
+                <span>Lun</span>
+                <span>Mar</span>
+                <span>Mie</span>
+                <span>Jue</span>
+                <span>Vie</span>
+                <span>Sab</span>
+                <span>Dom</span>
+              </div>
+              <div id="calendarGrid" class="calendar-grid"></div>
+            </div>
+            <div id="weekCalendarView" class="calendar-view hidden" hidden>
+              <div id="weekCalendarGrid" class="week-calendar-grid"></div>
+            </div>
+          </section>
+          <section class="task-list-panel" aria-labelledby="taskListTitle">
+            <div class="task-list-header">
+              <h3 id="taskListTitle">Lista de tareas</h3>
+              <p id="resultsSummary" class="small-note">Mostrando todas las tareas.</p>
+            </div>
+            <div id="taskList" class="task-list">
+              <p class="empty-state">Todavia no hay tareas registradas.</p>
+            </div>
+          </section>
         </div>
       </section>
-      <div id="taskList" class="task-list">
-        <p class="empty-state">Todavia no hay tareas registradas.</p>
-      </div>
-    </section>
+    </div>
   </main>
 
   <script src="app.js"></script>

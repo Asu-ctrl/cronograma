@@ -34,9 +34,9 @@ select {
 }
 
 .app-shell {
-  max-width: 1100px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 32px 20px 48px;
+  padding: 24px 20px 40px;
 }
 
 .hero,
@@ -52,8 +52,8 @@ select {
   justify-content: space-between;
   gap: 20px;
   align-items: center;
-  padding: 24px;
-  margin-bottom: 20px;
+  padding: 18px 22px;
+  margin-bottom: 18px;
 }
 
 .eyebrow {
@@ -71,13 +71,13 @@ p {
 }
 
 h1 {
-  margin-bottom: 10px;
-  font-size: 2rem;
+  margin-bottom: 6px;
+  font-size: 1.75rem;
 }
 
 h2 {
-  font-size: 1.3rem;
-  margin-bottom: 18px;
+  font-size: 1.2rem;
+  margin-bottom: 14px;
 }
 
 .hero-copy,
@@ -85,18 +85,57 @@ h2 {
 .task-meta,
 .small-note {
   color: var(--muted);
-  font-size: 1rem;
+  font-size: 0.9rem;
+}
+
+.hero-copy {
+  margin-bottom: 0;
 }
 
 .legend-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .card {
-  padding: 22px;
-  margin-bottom: 20px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.sidebar-column {
+  position: sticky;
+  top: 20px;
+  display: grid;
+  gap: 18px;
+}
+
+.sidebar-column .card {
+  margin-bottom: 0;
+}
+
+.sidebar-column .task-form {
+  grid-template-columns: 1fr;
+}
+
+.sidebar-column .activity-field {
+  grid-column: span 1;
+}
+
+.sidebar-column .primary-btn {
+  width: 100%;
+}
+
+.tasks-card {
+  min-width: 0;
+  margin-bottom: 0;
 }
 
 .task-form {
@@ -107,28 +146,29 @@ h2 {
 
 .filters-bar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
-  margin-bottom: 12px;
+  grid-template-columns: minmax(220px, 1.6fr) repeat(4, minmax(130px, 1fr)) auto;
+  gap: 12px;
+  margin-bottom: 14px;
+  align-items: end;
 }
 
 .filters-bar label {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  font-size: 1rem;
+  gap: 6px;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
 .filter-wide {
-  grid-column: span 2;
+  grid-column: auto;
 }
 
 .task-form label {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  font-size: 1rem;
+  gap: 6px;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -137,10 +177,10 @@ h2 {
 .filters-bar input,
 .filters-bar select {
   width: 100%;
-  min-height: 48px;
+  min-height: 42px;
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 12px 14px;
+  border-radius: 12px;
+  padding: 9px 12px;
   background: #fbfdff;
 }
 
@@ -173,8 +213,8 @@ h2 {
 .primary-btn,
 .secondary-btn,
 .ghost-btn {
-  min-height: 48px;
-  padding: 0 18px;
+  min-height: 42px;
+  padding: 0 14px;
   font-weight: 700;
 }
 
@@ -208,21 +248,25 @@ h2 {
 .section-title-row {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+}
+
+.section-title-row h2 {
+  margin-bottom: 0;
 }
 
 .message-area,
 .task-list {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .message-item,
 .task-item {
   border-radius: 18px;
-  padding: 16px;
+  padding: 14px;
   border: 1px solid transparent;
 }
 
@@ -245,7 +289,7 @@ h2 {
 
 .task-item {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .task-item.pending {
@@ -284,22 +328,22 @@ h2 {
 
 .task-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .status-chip {
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: 999px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .legend-pill,
 .priority-chip {
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: 999px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -376,8 +420,8 @@ h2 {
 
 .task-meta-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
 }
 
 .task-meta strong {
@@ -387,25 +431,67 @@ h2 {
 }
 
 .calendar-panel {
-  margin-bottom: 18px;
-  padding: 18px;
+  min-width: 0;
+  margin-bottom: 0;
+  padding: 14px;
   border: 1px solid var(--border);
   border-radius: 18px;
   background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
 }
 
+.planner-layout {
+  display: grid;
+  grid-template-columns: minmax(560px, 1fr) minmax(300px, 0.48fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.task-list-panel {
+  min-width: 0;
+  max-height: calc(100vh - 220px);
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.task-list-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.task-list-header h3,
+.calendar-toolbar h3 {
+  margin-bottom: 6px;
+}
+
+.task-list-header .small-note {
+  margin-bottom: 0;
+  text-align: right;
+}
+
+.task-list-panel .task-list {
+  max-height: calc(100vh - 320px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .calendar-toolbar {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   align-items: flex-start;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .calendar-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   justify-content: flex-end;
 }
@@ -413,8 +499,8 @@ h2 {
 .calendar-view-switch {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .calendar-view-switch .ghost-btn.is-active {
@@ -424,7 +510,7 @@ h2 {
 
 .calendar-month-label {
   margin: 0;
-  min-width: 180px;
+  min-width: 150px;
   text-align: center;
   font-weight: 700;
   color: var(--text);
@@ -443,33 +529,33 @@ h2 {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .calendar-weekdays {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .calendar-weekdays span {
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--muted);
 }
 
 .calendar-day,
 .calendar-day.placeholder {
-  min-height: 120px;
+  min-height: 92px;
   border-radius: 16px;
 }
 
 .calendar-day {
   border: 1px solid var(--border);
   background: #ffffff;
-  padding: 10px;
+  padding: 8px;
   text-align: left;
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .calendar-day:hover {
@@ -530,26 +616,26 @@ h2 {
 }
 
 .calendar-day-name {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: capitalize;
   color: var(--muted);
 }
 
 .calendar-day-number {
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--text);
 }
 
 .calendar-task-count {
-  min-width: 28px;
-  height: 28px;
+  min-width: 24px;
+  height: 24px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 700;
   background: #eff4fb;
   color: var(--text);
@@ -571,20 +657,20 @@ h2 {
 }
 
 .calendar-day-priority {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--muted);
 }
 
 .calendar-task-list {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .calendar-task-item {
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: 10px;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 700;
   line-height: 1.25;
 }
@@ -611,12 +697,12 @@ h2 {
 
 .week-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
 }
 
 .week-calendar-day {
-  min-height: 210px;
+  min-height: 170px;
 }
 
 .calendar-more {
@@ -627,12 +713,12 @@ h2 {
 .task-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .action-btn {
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 34px;
+  padding: 0 11px;
   font-weight: 700;
   background: rgba(255, 255, 255, 0.75);
   color: var(--text);
@@ -657,22 +743,67 @@ h2 {
 .empty-state,
 .empty-message {
   margin: 0;
-  padding: 16px;
+  padding: 14px;
   text-align: center;
   color: var(--muted);
   background: #f8fafc;
   border-radius: 16px;
 }
 
+@media (max-width: 1180px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-column {
+    position: static;
+  }
+
+  .sidebar-column .task-form {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .sidebar-column .activity-field {
+    grid-column: span 2;
+  }
+
+  .filters-bar {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+}
+
+@media (max-width: 940px) {
+  .planner-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .task-list-panel,
+  .task-list-panel .task-list {
+    max-height: none;
+  }
+}
+
 @media (max-width: 720px) {
+  .app-shell {
+    padding: 16px 12px 28px;
+  }
+
   .hero,
   .section-title-row,
+  .task-list-header,
   .task-header,
   .calendar-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .card,
+  .calendar-panel,
+  .task-list-panel {
+    padding: 14px;
+  }
+
+  .sidebar-column .activity-field,
   .activity-field {
     grid-column: span 1;
   }
