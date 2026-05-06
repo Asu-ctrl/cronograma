@@ -32,6 +32,7 @@ let tasks = loadTasks();
 let editingTaskId = null;
 let currentCalendarDate = dateFilter.value ? createDateFromInput(dateFilter.value) : new Date();
 let currentCalendarView = "month";
+const expandedTaskIds = new Set();
 
 function generateId() {
   if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -624,14 +625,17 @@ function updateTaskList() {
   sortedTasks.forEach((task) => {
     const status = getTaskStatus(task);
     const priority = getTaskPriority(task);
+    const isExpanded = expandedTaskIds.has(task.id);
     const taskItem = document.createElement("article");
-    taskItem.className = `task-item ${status.key}`;
+    taskItem.className = `task-item ${status.key}${isExpanded ? " is-expanded" : ""}`;
+    taskItem.setAttribute("aria-expanded", String(isExpanded));
 
     taskItem.innerHTML = `
       <div class="task-header">
-        <div>
+        <div class="task-heading">
           <h3 class="task-title">${escapeHtml(task.activity)}</h3>
           <p class="small-note">${task.alarmEnabled ? "Con alarma activa" : "Sin alarma"}${task.isDuplicate ? " | Tarea duplicada" : ""}</p>
+          <p class="task-quick-meta">Hora ${formatTime(task.time)}</p>
         </div>
         <div class="task-badges">
           <span class="priority-chip ${priority}">${getPriorityLabel(priority)}</span>
@@ -662,13 +666,16 @@ function updateTaskList() {
         <button class="action-btn complete" type="button" data-action="toggle" data-id="${task.id}">
           ${task.completed ? "Reabrir" : "Completar"}
         </button>
-        <button class="action-btn edit" type="button" data-action="edit" data-id="${task.id}">
+        <button class="action-btn details mobile-details-btn" type="button" data-action="details" data-id="${task.id}" aria-expanded="${isExpanded}">
+          ${isExpanded ? "Ocultar" : "Detalles"}
+        </button>
+        <button class="action-btn edit secondary-action" type="button" data-action="edit" data-id="${task.id}">
           Editar
         </button>
-        <button class="action-btn duplicate" type="button" data-action="duplicate" data-id="${task.id}">
+        <button class="action-btn duplicate secondary-action" type="button" data-action="duplicate" data-id="${task.id}">
           Duplicar
         </button>
-        <button class="action-btn delete" type="button" data-action="delete" data-id="${task.id}">
+        <button class="action-btn delete secondary-action" type="button" data-action="delete" data-id="${task.id}">
           Eliminar
         </button>
       </div>
@@ -802,6 +809,7 @@ function toggleTask(taskId) {
 function deleteTask(taskId) {
   const task = tasks.find((item) => item.id === taskId);
   tasks = tasks.filter((item) => item.id !== taskId);
+  expandedTaskIds.delete(taskId);
 
   if (editingTaskId === taskId) {
     resetForm();
@@ -815,6 +823,16 @@ function deleteTask(taskId) {
   }
 }
 
+function toggleTaskDetails(taskId) {
+  if (expandedTaskIds.has(taskId)) {
+    expandedTaskIds.delete(taskId);
+  } else {
+    expandedTaskIds.add(taskId);
+  }
+
+  updateTaskList();
+}
+
 function handleTaskActions(event) {
   const button = event.target.closest("button[data-action]");
   if (!button) {
@@ -822,6 +840,10 @@ function handleTaskActions(event) {
   }
 
   const { action, id } = button.dataset;
+
+  if (action === "details") {
+    toggleTaskDetails(id);
+  }
 
   if (action === "toggle") {
     toggleTask(id);
