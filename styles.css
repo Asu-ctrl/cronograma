@@ -25,6 +25,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   background: linear-gradient(180deg, #eff6ff 0%, var(--bg) 100%);
   color: var(--text);
+  -webkit-text-size-adjust: 100%;
 }
 
 button,
@@ -37,6 +38,9 @@ select {
   max-width: 1100px;
   margin: 0 auto;
   padding: 32px 20px 48px;
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+  padding-bottom: max(48px, env(safe-area-inset-bottom));
 }
 
 .hero,
@@ -660,12 +664,58 @@ h2 {
 }
 
 @media (max-width: 720px) {
+  .app-shell {
+    padding: 20px 16px 40px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+  }
+
+  .hero {
+    padding: 20px;
+    align-items: stretch;
+  }
+
+  h1 {
+    font-size: 1.65rem;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 1.15rem;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .calendar-panel {
+    padding: 14px;
+  }
+
   .hero,
   .section-title-row,
   .task-header,
   .calendar-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .hero .secondary-btn {
+    width: 100%;
+  }
+
+  .section-title-row .ghost-btn {
+    align-self: flex-start;
+  }
+
+  .task-form .primary-btn,
+  .filters-bar .ghost-btn {
+    width: 100%;
+  }
+
+  .task-header .task-badges {
+    justify-content: flex-start;
   }
 
   .activity-field {
@@ -676,14 +726,39 @@ h2 {
     grid-column: span 1;
   }
 
+  .calendar-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-controls .ghost-btn,
+  .calendar-controls .secondary-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .calendar-controls,
   .calendar-month-label {
     justify-content: stretch;
     text-align: left;
   }
 
+  .calendar-month-label {
+    min-width: 0;
+    order: -1;
+    padding: 8px 0;
+  }
+
   .calendar-view-switch {
     width: 100%;
+  }
+
+  .calendar-view-switch .ghost-btn {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
   }
 
   .calendar-weekdays,
@@ -694,6 +769,12 @@ h2 {
   .calendar-day,
   .calendar-day.placeholder {
     min-height: 96px;
+    padding: 8px;
+  }
+
+  .calendar-task-item {
+    font-size: 0.72rem;
+    padding: 5px 6px;
   }
 
   .week-calendar-grid {
@@ -702,5 +783,94 @@ h2 {
 
   .week-calendar-day {
     min-height: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.4rem;
+  }
+
+  .hero-copy,
+  .legend,
+  .task-meta,
+  .small-note {
+    font-size: 0.9rem;
+  }
+
+  .legend-pill,
+  .priority-chip,
+  .status-chip {
+    font-size: 0.78rem;
+    padding: 5px 8px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .legend-group {
+    gap: 6px;
+  }
+
+  .task-form,
+  .filters-bar {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .task-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Calendario mensual: ancho mínimo legible con desplazamiento horizontal */
+  #monthCalendarView {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+    padding: 0 4px 6px;
+  }
+
+  #monthCalendarView .calendar-weekdays,
+  #monthCalendarView .calendar-grid {
+    min-width: 520px;
+  }
+
+  .calendar-weekdays span {
+    font-size: 0.75rem;
+  }
+
+  .calendar-day,
+  .calendar-day.placeholder {
+    min-height: 88px;
+    border-radius: 12px;
+  }
+
+  .calendar-day-number {
+    font-size: 0.9rem;
+  }
+
+  .calendar-day-name {
+    font-size: 0.72rem;
+  }
+
+  .calendar-task-count {
+    min-width: 24px;
+    height: 24px;
+    font-size: 0.72rem;
+  }
+
+  .message-item,
+  .task-item {
+    padding: 14px;
+  }
+
+  .task-title {
+    font-size: 1rem;
+  }
+
+  .primary-btn,
+  .secondary-btn,
+  .ghost-btn {
+    min-height: 44px;
   }
 }
