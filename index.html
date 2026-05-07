@@ -1,27 +1,44 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cronograma de actividades del dia</title>
+  <title>Cronograma de actividades</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap"
+    rel="stylesheet"
+  >
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="app-shell">
-    <section class="hero">
-      <div>
-        <p class="eyebrow">Agenda sencilla</p>
-        <h1>Cronograma de actividades del dia</h1>
+    <header class="hero">
+      <div class="hero__intro">
+        <h1 class="hero__title">Cronograma de actividades</h1>
         <p class="hero-copy">
           Organiza tus actividades del dia con fecha, hora, prioridad y recordatorios visuales.
         </p>
       </div>
-      <button id="enableNotificationsBtn" class="secondary-btn" type="button">
-        Activar notificaciones
-      </button>
-    </section>
+      <div class="hero__actions">
+        <div class="theme-toggle" role="group" aria-label="Tema claro u obscuro">
+          <button type="button" id="themeLightBtn" class="theme-toggle__btn is-active" aria-pressed="true">
+            Claro
+          </button>
+          <button type="button" id="themeDarkBtn" class="theme-toggle__btn" aria-pressed="false">
+            Obscuro
+          </button>
+        </div>
+        <button id="enableNotificationsBtn" class="secondary-btn hero__action" type="button">
+          Activar notificaciones
+        </button>
+      </div>
+    </header>
 
-    <section class="card">
+    <div class="layout-workspace">
+    <div class="layout-workspace__rail" aria-label="Acciones rapidas">
+    <section class="card card--lift">
       <div class="section-title-row">
         <h2 id="formTitle">Nueva tarea</h2>
         <button id="cancelEditBtn" class="ghost-btn hidden" type="button">Cancelar edicion</button>
@@ -37,10 +54,41 @@
           <input id="taskActivity" name="taskActivity" type="text" maxlength="120" placeholder="Ejemplo: entregar informe" required>
         </label>
 
-        <label>
-          Hora
-          <input id="taskTime" name="taskTime" type="time" required>
-        </label>
+        <div class="activity-field time-range-block">
+          <span class="time-range-title">Horario de la actividad</span>
+          <div class="time-range-analog">
+            <label class="time-field time-field--analog">
+              Inicio
+              <input
+                id="taskTimeStart"
+                name="taskTimeStart"
+                type="text"
+                class="analog-time-display"
+                autocomplete="off"
+                placeholder="--:--"
+                required
+                readonly
+                aria-haspopup="dialog"
+                aria-controls="analogScheduleDialog"
+              >
+            </label>
+            <label class="time-field time-field--analog">
+              Fin
+              <input
+                id="taskTimeEnd"
+                name="taskTimeEnd"
+                type="text"
+                class="analog-time-display"
+                autocomplete="off"
+                placeholder="--:--"
+                required
+                readonly
+                aria-haspopup="dialog"
+                aria-controls="analogScheduleDialog"
+              >
+            </label>
+          </div>
+        </div>
 
         <label>
           Aviso previo
@@ -67,114 +115,172 @@
           Activar alarma de cumplimiento
         </label>
 
+        <p id="formFeedback" class="form-feedback hidden" role="status" aria-live="polite"></p>
         <button id="submitTaskBtn" class="primary-btn" type="submit">Guardar tarea</button>
       </form>
     </section>
 
-    <section class="card message-card">
+    <section class="card message-card card--lift">
       <div class="section-title-row">
         <h2>Mensajeria de alertas</h2>
-        <button id="clearMessagesBtn" class="ghost-btn" type="button">Limpiar</button>
+        <button
+          id="clearMessagesBtn"
+          class="ghost-btn"
+          type="button"
+          title="Cierra el aviso temporal bajo el formulario de tarea"
+        >
+          Limpiar
+        </button>
       </div>
       <div id="messageArea" class="message-area" aria-live="polite">
-        <p class="empty-message">Aqui apareceran las alertas y recordatorios.</p>
+        <p class="empty-message">Aqui veras el recordatorio mas cercano en el tiempo.</p>
       </div>
     </section>
+    </div>
 
-    <section class="card">
+    <div class="layout-workspace__main">
+    <section class="card card--tasks card--lift">
       <div class="section-title-row">
         <div>
           <h2>Mis tareas</h2>
           <div class="legend-group">
-            <span class="legend-pill pending">Pendiente</span>
-            <span class="legend-pill soon">Proxima</span>
-            <span class="legend-pill overdue">Urgente</span>
-            <span class="legend-pill completed">Completada</span>
             <span class="legend-pill priority-high">Prioridad alta</span>
             <span class="legend-pill priority-medium">Prioridad media</span>
             <span class="legend-pill priority-low">Prioridad baja</span>
           </div>
         </div>
       </div>
-      <div class="filters-bar">
-        <label class="filter-wide">
-          Buscar actividad
-          <input id="searchFilter" type="text" placeholder="Buscar por nombre de tarea">
-        </label>
-        <label>
-          Filtrar por estado
-          <select id="statusFilter">
-            <option value="all">Todos</option>
-            <option value="pending">Pendientes</option>
-            <option value="soon">Proximas</option>
-            <option value="overdue">Urgentes</option>
-            <option value="completed">Completadas</option>
-          </select>
-        </label>
-        <label>
-          Filtrar por fecha
-          <input id="dateFilter" type="date">
-        </label>
-        <label>
-          Filtrar por prioridad
-          <select id="priorityFilter">
-            <option value="all">Todas</option>
-            <option value="high">Alta</option>
-            <option value="medium">Media</option>
-            <option value="low">Baja</option>
-          </select>
-        </label>
-        <label>
-          Periodo rapido
-          <select id="periodFilter">
-            <option value="all">Todos</option>
-            <option value="today">Hoy</option>
-            <option value="week">Esta semana</option>
-          </select>
-        </label>
-        <button id="clearFiltersBtn" class="ghost-btn" type="button">Limpiar filtros</button>
-      </div>
-      <p id="resultsSummary" class="small-note">Mostrando todas las tareas.</p>
-      <section class="calendar-panel" aria-labelledby="calendarTitle">
-        <div class="calendar-toolbar">
-          <div>
-            <h3 id="calendarTitle">Calendario visual</h3>
-            <p id="selectedDateSummary" class="small-note">
-              Selecciona un dia para ver rapidamente las actividades pendientes.
-            </p>
-            <div class="calendar-view-switch" role="group" aria-label="Cambiar vista del calendario">
-              <button id="monthViewBtn" class="ghost-btn is-active" type="button">Vista mensual</button>
-              <button id="weekViewBtn" class="ghost-btn" type="button">Vista semanal</button>
+
+      <details class="filters-disclosure" open>
+        <summary class="filters-disclosure__summary">
+          <span class="filters-disclosure__title">Filtros y busqueda</span>
+          <span class="filters-disclosure__meta" aria-hidden="true">
+            <span class="filters-disclosure__hint">Mostrar / ocultar</span>
+          </span>
+        </summary>
+        <div class="filters-disclosure__body">
+          <div class="filters-bar">
+            <label class="filter-wide">
+              Buscar actividad
+              <input id="searchFilter" type="text" placeholder="Buscar por nombre de tarea">
+            </label>
+            <div class="filter-date-block">
+              <label>
+                Filtrar por fecha
+                <select id="dateFilterMode" name="dateFilterMode" aria-label="Modo de filtro por fecha">
+                  <option value="day">Dia concreto</option>
+                  <option value="range">Rango personalizado</option>
+                </select>
+              </label>
+              <div id="dateFilterDayFields" class="filter-date-subfields">
+                <label>
+                  Fecha
+                  <input id="dateFilter" type="date" aria-label="Filtrar por una fecha">
+                </label>
+              </div>
+              <div id="dateFilterRangeFields" class="filter-date-subfields hidden">
+                <div class="filter-date-range-grid">
+                  <label>
+                    Desde
+                    <input id="dateRangeFrom" type="date" aria-label="Fecha inicial del rango">
+                  </label>
+                  <label>
+                    Hasta
+                    <input id="dateRangeTo" type="date" aria-label="Fecha final del rango">
+                  </label>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="calendar-controls">
-            <button id="prevMonthBtn" class="ghost-btn" type="button">Mes anterior</button>
-            <p id="calendarMonthLabel" class="calendar-month-label" aria-live="polite"></p>
-            <button id="nextMonthBtn" class="ghost-btn" type="button">Mes siguiente</button>
-            <button id="resetCalendarBtn" class="secondary-btn" type="button">Quitar fecha</button>
+            <label>
+              Filtrar por prioridad
+              <select id="priorityFilter">
+                <option value="all">Todas</option>
+                <option value="high">Alta</option>
+                <option value="medium">Media</option>
+                <option value="low">Baja</option>
+              </select>
+            </label>
+            <button id="clearFiltersBtn" class="ghost-btn" type="button">Limpiar filtros</button>
           </div>
         </div>
-        <div id="monthCalendarView" class="calendar-view">
-          <div class="calendar-weekdays" aria-hidden="true">
-            <span>Lun</span>
-            <span>Mar</span>
-            <span>Mie</span>
-            <span>Jue</span>
-            <span>Vie</span>
-            <span>Sab</span>
-            <span>Dom</span>
-          </div>
-          <div id="calendarGrid" class="calendar-grid"></div>
+      </details>
+
+      <p id="resultsSummary" class="small-note">Mostrando todas las tareas.</p>
+
+      <div class="tasks-split">
+        <div class="tasks-split__calendar">
+          <section class="calendar-panel" aria-labelledby="calendarTitle">
+            <div class="calendar-toolbar">
+              <div class="calendar-toolbar__intro">
+                <h3 id="calendarTitle">Calendario visual</h3>
+                <p id="calendarMonthLabel" class="calendar-month-label" aria-live="polite"></p>
+                <div class="calendar-view-picker">
+                  <label for="calendarViewSelect" class="calendar-view-picker__label">Vista del calendario</label>
+                  <select id="calendarViewSelect" class="calendar-view-picker__select">
+                    <option value="month">Mensual (todo el mes)</option>
+                    <option value="week">Semanal (7 dias)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="calendar-controls" role="group" aria-label="Navegación del calendario">
+                <button id="prevMonthBtn" class="ghost-btn" type="button">Mes anterior</button>
+                <button id="nextMonthBtn" class="ghost-btn" type="button">Mes siguiente</button>
+                <button id="resetCalendarBtn" class="secondary-btn" type="button">Quitar fecha</button>
+              </div>
+            </div>
+            <div id="monthCalendarView" class="calendar-view">
+              <div class="calendar-weekdays" aria-hidden="true">
+                <span>Lun</span>
+                <span>Mar</span>
+                <span>Mie</span>
+                <span>Jue</span>
+                <span>Vie</span>
+                <span>Sab</span>
+                <span>Dom</span>
+              </div>
+              <div id="calendarGrid" class="calendar-grid"></div>
+            </div>
+            <div id="weekCalendarView" class="calendar-view hidden">
+              <div id="weekCalendarGrid" class="week-calendar-grid"></div>
+            </div>
+          </section>
         </div>
-        <div id="weekCalendarView" class="calendar-view hidden">
-          <div id="weekCalendarGrid" class="week-calendar-grid"></div>
-        </div>
-      </section>
-      <div id="taskList" class="task-list">
-        <p class="empty-state">Todavia no hay tareas registradas.</p>
+
+        <aside class="tasks-split__aside" aria-label="Lista de actividades">
+          <details class="task-list-disclosure" open>
+            <summary class="task-list-disclosure__summary">
+              <span class="task-list-disclosure__title">Lista de actividades</span>
+              <span class="task-list-disclosure__meta" aria-hidden="true">
+                <span class="task-list-disclosure__hint">Desplegar</span>
+              </span>
+            </summary>
+            <div class="task-list-disclosure__body">
+              <div id="taskList" class="task-list">
+                <p class="empty-state">Todavia no hay tareas registradas.</p>
+              </div>
+            </div>
+          </details>
+        </aside>
       </div>
     </section>
+    </div>
+    </div>
   </main>
+
+  <dialog id="analogScheduleDialog" class="analog-schedule-dialog" aria-labelledby="analogScheduleTitle">
+    <div class="analog-schedule-dialog__inner">
+      <h3 id="analogScheduleTitle">Horario en reloj analógico</h3>
+      <p class="small-note analog-schedule-dialog__hint">
+        Usa <strong>Inicio</strong> o <strong>Fin</strong>, elige <strong>a. m.</strong> o <strong>p. m.</strong>, y el reloj: <strong>borde exterior</strong> horas (1–12), <strong>más hacia el centro</strong> minutos. Al guardar se escribe en 24 h en el formulario.
+      </p>
+      <div class="analog-clock-stack" id="analogClocksMount"></div>
+      <p id="analogScheduleError" class="analog-schedule-dialog__error hidden" role="alert"></p>
+      <div class="analog-schedule-dialog__actions">
+        <button type="button" id="analogScheduleCancelBtn" class="ghost-btn">Cancelar</button>
+        <button type="button" id="analogScheduleSaveBtn" class="primary-btn">Guardar horario</button>
+      </div>
+    </div>
+  </dialog>
 
   <script src="app.js"></script>
 </body>
