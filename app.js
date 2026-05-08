@@ -1,32 +1,40 @@
 const STORAGE_KEY = "agenda-tareas-web";
+const THEME_STORAGE_KEY = "cronograma-theme";
 const ALERT_CHECK_INTERVAL_MS = 30000;
 
 const taskForm = document.querySelector("#taskForm");
 const taskList = document.querySelector("#taskList");
+const taskListDisclosure = document.querySelector(".task-list-disclosure");
 const messageArea = document.querySelector("#messageArea");
+const formFeedback = document.querySelector("#formFeedback");
 const enableNotificationsBtn = document.querySelector("#enableNotificationsBtn");
 const clearMessagesBtn = document.querySelector("#clearMessagesBtn");
 const formTitle = document.querySelector("#formTitle");
 const submitTaskBtn = document.querySelector("#submitTaskBtn");
 const cancelEditBtn = document.querySelector("#cancelEditBtn");
 const searchFilter = document.querySelector("#searchFilter");
-const statusFilter = document.querySelector("#statusFilter");
 const dateFilter = document.querySelector("#dateFilter");
+const dateFilterMode = document.querySelector("#dateFilterMode");
+const dateRangeFrom = document.querySelector("#dateRangeFrom");
+const dateRangeTo = document.querySelector("#dateRangeTo");
+const dateFilterDayFields = document.querySelector("#dateFilterDayFields");
+const dateFilterRangeFields = document.querySelector("#dateFilterRangeFields");
 const priorityFilter = document.querySelector("#priorityFilter");
-const periodFilter = document.querySelector("#periodFilter");
 const clearFiltersBtn = document.querySelector("#clearFiltersBtn");
 const resultsSummary = document.querySelector("#resultsSummary");
 const calendarGrid = document.querySelector("#calendarGrid");
 const calendarMonthLabel = document.querySelector("#calendarMonthLabel");
-const selectedDateSummary = document.querySelector("#selectedDateSummary");
 const prevMonthBtn = document.querySelector("#prevMonthBtn");
 const nextMonthBtn = document.querySelector("#nextMonthBtn");
 const resetCalendarBtn = document.querySelector("#resetCalendarBtn");
-const monthViewBtn = document.querySelector("#monthViewBtn");
-const weekViewBtn = document.querySelector("#weekViewBtn");
+const calendarViewSelect = document.querySelector("#calendarViewSelect");
 const monthCalendarView = document.querySelector("#monthCalendarView");
 const weekCalendarView = document.querySelector("#weekCalendarView");
 const weekCalendarGrid = document.querySelector("#weekCalendarGrid");
+const taskTimeStartInput = document.querySelector("#taskTimeStart");
+const taskTimeEndInput = document.querySelector("#taskTimeEnd");
+const themeLightBtn = document.querySelector("#themeLightBtn");
+const themeDarkBtn = document.querySelector("#themeDarkBtn");
 
 let tasks = loadTasks();
 let editingTaskId = null;
@@ -41,6 +49,54 @@ function generateId() {
   return `task-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function getPreferredTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark") {
+      return stored;
+    }
+  } catch (error) {
+    /* localStorage no disponible */
+  }
+
+  if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    return "dark";
+  }
+
+  return "light";
+}
+
+function applyTheme(theme) {
+  const next = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = next;
+
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+  } catch (error) {
+    /* ignore */
+  }
+
+  if (themeLightBtn && themeDarkBtn) {
+    const isLight = next === "light";
+    themeLightBtn.classList.toggle("is-active", isLight);
+    themeDarkBtn.classList.toggle("is-active", !isLight);
+    themeLightBtn.setAttribute("aria-pressed", String(isLight));
+    themeDarkBtn.setAttribute("aria-pressed", String(!isLight));
+  }
+}
+
+function initTheme() {
+  applyTheme(getPreferredTheme());
+
+  if (themeLightBtn) {
+    themeLightBtn.addEventListener("click", () => applyTheme("light"));
+  }
+
+  if (themeDarkBtn) {
+    themeDarkBtn.addEventListener("click", () => applyTheme("dark"));
+  }
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -48,6 +104,46 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function normalizeActivityForIcon(text) {
+  return String(text)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function pickActivityIcon(activityText) {
+  const t = normalizeActivityForIcon(activityText);
+  const rules = [
+    [/reunion|junta|meet|zoom|teams|videollamada|agenda|calendario/, "📅"],
+    [/llamada|telefono|call|whatsapp|contactar/, "📞"],
+    [/correo|email|mail|mensaje|notificacion/, "✉️"],
+    [/informe|reporte|documento|pdf|word|escribir|redactar/, "📄"],
+    [/compra|supermercado|tienda|mercado|pedido/, "🛒"],
+    [/medico|salud|cita|hospital|clinica|farmacia/, "🏥"],
+    [/ejercicio|gym|gimnasio|deporte|correr|caminar|entren/, "🏃"],
+    [/viaje|vuelo|avion|tren|hotel|aeropuerto/, "✈️"],
+    [/estudiar|clase|examen|curso|universidad|tarea escolar/, "📚"],
+    [/comida|cocinar|almuerzo|cena|desayuno|receta/, "🍽️"],
+    [/limpiar|lavar|hogar|ordenar|casa/, "🧹"],
+    [/pago|factura|banco|dinero|transferencia|precio/, "💳"],
+    [/codigo|programar|bug|software|app|web|desarrollo|deploy/, "💻"],
+    [/entrega|deadline|plazo|urgente|hoy|vence/, "⏰"],
+    [/musica|concierto|cancion|audio|podcast/, "🎵"],
+    [/foto|imagen|video|diseno|presentacion|slides/, "🎨"],
+    [/cumple|fiesta|celebracion|regalo/, "🎉"],
+    [/coche|auto|mecanico|gasolina|taller|conducir/, "🚗"],
+    [/mascota|perro|gato|veterinario/, "🐾"],
+  ];
+
+  for (const [pattern, icon] of rules) {
+    if (pattern.test(t)) {
+      return icon;
+    }
+  }
+
+  return "📋";
 }
 
 function loadTasks() {
@@ -64,12 +160,40 @@ function saveTasks() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 }
 
+function getTaskTimeStart(task) {
+  return task.timeStart || task.time || "09:00";
+}
+
+function getTaskTimeEnd(task) {
+  return task.timeEnd || getTaskTimeStart(task);
+}
+
 function createTaskTimestamp(task) {
-  return new Date(`${task.date}T${task.time}`).getTime();
+  return new Date(`${task.date}T${getTaskTimeStart(task)}`).getTime();
+}
+
+function compareTasksBySchedule(firstTask, secondTask) {
+  const startDiff = createTaskTimestamp(firstTask) - createTaskTimestamp(secondTask);
+  if (startDiff !== 0) {
+    return startDiff;
+  }
+
+  const endDiff = timeToMinutes(getTaskTimeEnd(firstTask)) - timeToMinutes(getTaskTimeEnd(secondTask));
+  if (endDiff !== 0) {
+    return endDiff;
+  }
+
+  return String(firstTask.activity || "").localeCompare(String(secondTask.activity || ""), "es");
+}
+
+function getReminderMomentMs(task) {
+  const mins = Number(task.reminderMinutes);
+  const safeMinutes = Number.isFinite(mins) ? mins : 0;
+  return createTaskTimestamp(task) - safeMinutes * 60000;
 }
 
 function formatDate(task) {
-  const taskDate = new Date(`${task.date}T${task.time}`);
+  const taskDate = new Date(`${task.date}T${getTaskTimeStart(task)}`);
 
   return taskDate.toLocaleDateString("es-ES", {
     weekday: "short",
@@ -80,8 +204,39 @@ function formatDate(task) {
 }
 
 function formatTime(timeValue) {
-  const [hours, minutes] = timeValue.split(":");
+  const [hours, minutes] = String(timeValue).split(":");
   return `${hours}:${minutes}`;
+}
+
+function formatTimeRange(task) {
+  const start = getTaskTimeStart(task);
+  const end = getTaskTimeEnd(task);
+  if (start === end) {
+    return formatTime(start);
+  }
+
+  return `${formatTime(start)} - ${formatTime(end)}`;
+}
+
+function timeToMinutes(timeValue) {
+  const parts = String(timeValue).split(":");
+  const hours = Number(parts[0]) || 0;
+  const minutes = Number(parts[1]) || 0;
+  return hours * 60 + minutes;
+}
+
+function validateTimeRangeForm(formData) {
+  const timeStart = formData.get("taskTimeStart");
+  const timeEnd = formData.get("taskTimeEnd");
+  if (!String(timeStart || "").trim() || !String(timeEnd || "").trim()) {
+    return "Indica hora de inicio y de fin.";
+  }
+
+  if (timeToMinutes(timeEnd) < timeToMinutes(timeStart)) {
+    return "La hora de fin debe ser posterior o igual a la de inicio.";
+  }
+
+  return "";
 }
 
 function getReminderLabel(task) {
@@ -99,11 +254,72 @@ function getReminderLabel(task) {
 function getActiveFilters() {
   return {
     search: searchFilter.value.trim().toLowerCase(),
-    status: statusFilter.value,
+    dateMode: dateFilterMode ? dateFilterMode.value : "day",
     date: dateFilter.value,
+    dateRangeFrom: dateRangeFrom ? dateRangeFrom.value : "",
+    dateRangeTo: dateRangeTo ? dateRangeTo.value : "",
     priority: priorityFilter.value,
-    period: periodFilter.value,
   };
+}
+
+function syncDateFilterModeUI() {
+  if (!dateFilterDayFields || !dateFilterRangeFields || !dateFilterMode) {
+    return;
+  }
+
+  const isRange = dateFilterMode.value === "range";
+  dateFilterDayFields.classList.toggle("hidden", isRange);
+  dateFilterRangeFields.classList.toggle("hidden", !isRange);
+}
+
+function normalizeDateRangeBounds(fromRaw, toRaw) {
+  let from = String(fromRaw || "").trim();
+  let to = String(toRaw || "").trim();
+  if (from && to && from > to) {
+    const swap = from;
+    from = to;
+    to = swap;
+  }
+  return { from, to };
+}
+
+function taskMatchesDateFilter(taskDateStr, filters) {
+  if (filters.dateMode === "range") {
+    const { from, to } = normalizeDateRangeBounds(filters.dateRangeFrom, filters.dateRangeTo);
+    if (!from && !to) {
+      return true;
+    }
+    if (from && taskDateStr < from) {
+      return false;
+    }
+    if (to && taskDateStr > to) {
+      return false;
+    }
+    return true;
+  }
+
+  return !filters.date || taskDateStr === filters.date;
+}
+
+function getDateFilterCalendarState(dayValue) {
+  const mode = dateFilterMode ? dateFilterMode.value : "day";
+  if (mode === "day") {
+    const sel = dateFilter.value;
+    return { mode: "day", selected: Boolean(sel && dayValue === sel) };
+  }
+
+  const { from, to } = normalizeDateRangeBounds(
+    dateRangeFrom ? dateRangeFrom.value : "",
+    dateRangeTo ? dateRangeTo.value : ""
+  );
+  if (!from && !to) {
+    return { mode: "range", inRange: false, isStart: false, isEnd: false };
+  }
+
+  const inRange = (!from || dayValue >= from) && (!to || dayValue <= to);
+  const isStart = Boolean(from && dayValue === from);
+  const isEnd = Boolean(to && dayValue === to);
+  return { mode: "range", inRange, isStart, isEnd };
 }
 
 function getTaskPriority(task) {
@@ -134,24 +350,31 @@ function getPriorityWeight(priority) {
   return 1;
 }
 
-function isSameDay(firstDate, secondDate) {
-  return firstDate.toDateString() === secondDate.toDateString();
-}
+function getDominantPriority(dayTasks) {
+  const activeTasks = dayTasks.filter((task) => !task.completed);
+  const sourceTasks = activeTasks.length ? activeTasks : dayTasks;
 
-function isInCurrentWeek(taskDate, currentDate) {
-  const today = new Date(currentDate);
-  today.setHours(0, 0, 0, 0);
+  if (!sourceTasks.length) {
+    return "";
+  }
 
-  const dayOfWeek = today.getDay();
-  const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const counts = {
+    high: 0,
+    medium: 0,
+    low: 0,
+  };
 
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - diffToMonday);
+  sourceTasks.forEach((task) => {
+    counts[getTaskPriority(task)] += 1;
+  });
 
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 7);
+  return Object.entries(counts).sort((firstEntry, secondEntry) => {
+    if (secondEntry[1] !== firstEntry[1]) {
+      return secondEntry[1] - firstEntry[1];
+    }
 
-  return taskDate >= startOfWeek && taskDate < endOfWeek;
+    return getPriorityWeight(secondEntry[0]) - getPriorityWeight(firstEntry[0]);
+  })[0][0];
 }
 
 function createDateFromInput(dateValue) {
@@ -170,14 +393,6 @@ function formatCalendarMonth(date) {
   return date.toLocaleDateString("es-ES", {
     month: "long",
     year: "numeric",
-  });
-}
-
-function formatSelectedDate(dateValue) {
-  return createDateFromInput(dateValue).toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
   });
 }
 
@@ -210,179 +425,83 @@ function formatWeekRange(date) {
   })}`;
 }
 
-function getTaskStatus(task) {
-  if (task.completed) {
-    return { key: "completed", label: "Completada" };
-  }
-
-  const now = Date.now();
-  const taskTime = createTaskTimestamp(task);
-  const diffMinutes = Math.round((taskTime - now) / 60000);
-
-  if (diffMinutes < 0) {
-    return { key: "overdue", label: "Urgente" };
-  }
-
-  if (diffMinutes <= 60) {
-    return { key: "soon", label: "Proxima" };
-  }
-
-  return { key: "pending", label: "Pendiente" };
-}
-
 function getCalendarDayTasks(dateValue) {
-  return tasks
-    .filter((task) => task.date === dateValue)
-    .sort((firstTask, secondTask) => createTaskTimestamp(firstTask) - createTaskTimestamp(secondTask));
+  return tasks.filter((task) => task.date === dateValue).sort(compareTasksBySchedule);
 }
 
 function getCalendarDayTone(dayTasks) {
-  if (dayTasks.some((task) => getTaskStatus(task).key === "overdue")) {
-    return "has-overdue";
-  }
-
-  if (dayTasks.some((task) => getTaskStatus(task).key === "soon")) {
-    return "has-soon";
-  }
-
-  if (dayTasks.some((task) => getTaskStatus(task).key === "pending")) {
-    return "has-pending";
-  }
-
-  if (dayTasks.some((task) => getTaskStatus(task).key === "completed")) {
-    return "has-completed";
-  }
-
-  return "";
-}
-
-function getDominantPriority(dayTasks) {
-  const activeTasks = dayTasks.filter((task) => !task.completed);
-  const sourceTasks = activeTasks.length ? activeTasks : dayTasks;
-
-  if (!sourceTasks.length) {
+  if (!dayTasks.length) {
     return "";
   }
 
-  const counts = {
-    high: 0,
-    medium: 0,
-    low: 0,
-  };
+  const allCompleted = dayTasks.every((task) => task.completed);
+  if (allCompleted) {
+    return "day-all-completed";
+  }
 
-  sourceTasks.forEach((task) => {
-    counts[getTaskPriority(task)] += 1;
-  });
-
-  return Object.entries(counts).sort((firstEntry, secondEntry) => {
-    if (secondEntry[1] !== firstEntry[1]) {
-      return secondEntry[1] - firstEntry[1];
-    }
-
-    return getPriorityWeight(secondEntry[0]) - getPriorityWeight(firstEntry[0]);
-  })[0][0];
-}
-
-function getCalendarDayPriorityTone(dayTasks) {
-  const dominantPriority = getDominantPriority(dayTasks);
-  return dominantPriority ? `priority-${dominantPriority}-day` : "";
-}
-
-function getCalendarPreviewMarkup(dayTasks, limit = 2) {
-  const taskPreviews = dayTasks
-    .slice(0, limit)
-    .map((task) => {
-      const status = getTaskStatus(task);
-      const priority = getTaskPriority(task);
-      return `
-        <span class="calendar-task-item ${status.key} priority-${priority}">
-          ${formatTime(task.time)} · ${escapeHtml(task.activity)}
-        </span>
-      `;
-    })
-    .join("");
-  const moreCount =
-    dayTasks.length > limit ? `<span class="calendar-more">+${dayTasks.length - limit} mas</span>` : "";
-
-  return {
-    taskPreviews,
-    moreCount,
-  };
+  const dominant = getDominantPriority(dayTasks);
+  return dominant ? `priority-${dominant}-day` : "";
 }
 
 function createCalendarDayButton(dayDate, options = {}) {
-  const { showDayName = false, previewLimit = 2, extraClassName = "" } = options;
+  const { showDayName = false, extraClassName = "" } = options;
   const dayValue = formatDateInputValue(dayDate);
   const dayTasks = getCalendarDayTasks(dayValue);
   const dayStatusTone = getCalendarDayTone(dayTasks);
-  const dayPriorityTone = getCalendarDayPriorityTone(dayTasks);
-  const dominantPriority = getDominantPriority(dayTasks);
   const todayValue = formatDateInputValue(new Date());
-  const selectedDateValue = dateFilter.value;
-  const { taskPreviews, moreCount } = getCalendarPreviewMarkup(dayTasks, previewLimit);
+  const calState = getDateFilterCalendarState(dayValue);
   const button = document.createElement("button");
 
   button.type = "button";
-  button.className = `calendar-day ${extraClassName} ${dayPriorityTone} ${dayStatusTone}`.trim();
+  button.className = `calendar-day ${extraClassName} ${dayStatusTone}`.trim();
   if (dayValue === todayValue) {
     button.classList.add("today");
   }
-  if (selectedDateValue && dayValue === selectedDateValue) {
+  if (calState.mode === "day" && calState.selected) {
     button.classList.add("selected");
+  }
+  if (calState.mode === "range") {
+    if (calState.inRange) {
+      button.classList.add("calendar-day--in-range");
+    }
+    if (calState.isStart) {
+      button.classList.add("calendar-day--range-start");
+    }
+    if (calState.isEnd) {
+      button.classList.add("calendar-day--range-end");
+    }
   }
 
   button.dataset.date = dayValue;
-  button.setAttribute("aria-pressed", String(dayValue === selectedDateValue));
+  const pressed =
+    calState.mode === "day"
+      ? calState.selected
+      : calState.isStart || calState.isEnd;
+  button.setAttribute("aria-pressed", String(pressed));
+
+  const countLabel = dayTasks.length === 1 ? "1 actividad" : `${dayTasks.length} actividades`;
+  const countMarkup =
+    dayTasks.length > 0
+      ? `<span class="calendar-activity-count" aria-label="${countLabel}">${dayTasks.length}</span>`
+      : "";
+
   button.innerHTML = `
-    <div class="calendar-day-header">
-      <div class="calendar-day-heading">
-        ${showDayName ? `<span class="calendar-day-name">${escapeHtml(formatDayName(dayDate))}</span>` : ""}
+    <div class="calendar-day-inner">
+      ${showDayName ? `<span class="calendar-day-name">${escapeHtml(formatDayName(dayDate))}</span>` : ""}
+      <div class="calendar-day-meta">
         <span class="calendar-day-number">${dayDate.getDate()}</span>
+        ${countMarkup}
       </div>
-      ${dayTasks.length ? `<span class="calendar-task-count ${dominantPriority}">${dayTasks.length}</span>` : ""}
-    </div>
-    ${dominantPriority ? `<span class="calendar-day-priority">Prioridad dominante: ${getPriorityLabel(dominantPriority)}</span>` : ""}
-    <div class="calendar-task-list">
-      ${taskPreviews || '<span class="calendar-more">Sin actividades</span>'}
-      ${moreCount}
     </div>
   `;
 
   return button;
 }
 
-function updateSelectedDateSummary() {
-  if (currentCalendarView === "week" && !dateFilter.value) {
-    selectedDateSummary.textContent = `Vista semanal del ${formatWeekRange(currentCalendarDate)}. Selecciona un dia para ver rapidamente las actividades pendientes.`;
-    return;
-  }
-
-  if (!dateFilter.value) {
-    selectedDateSummary.textContent =
-      "Selecciona un dia para ver rapidamente las actividades pendientes.";
-    return;
-  }
-
-  const dayTasks = getCalendarDayTasks(dateFilter.value);
-  const pendingCount = dayTasks.filter((task) => !task.completed).length;
-  const formattedDate = formatSelectedDate(dateFilter.value);
-
-  if (!dayTasks.length) {
-    selectedDateSummary.textContent = `No hay actividades registradas para ${formattedDate}.`;
-    return;
-  }
-
-  if (!pendingCount) {
-    selectedDateSummary.textContent = `Todas las actividades de ${formattedDate} ya estan completadas.`;
-    return;
-  }
-
-  selectedDateSummary.textContent = `Tienes ${pendingCount} actividad${pendingCount === 1 ? "" : "es"} pendiente${pendingCount === 1 ? "" : "s"} para ${formattedDate}.`;
-}
-
 function updateCalendarHeader() {
-  monthViewBtn.classList.toggle("is-active", currentCalendarView === "month");
-  weekViewBtn.classList.toggle("is-active", currentCalendarView === "week");
+  if (calendarViewSelect) {
+    calendarViewSelect.value = currentCalendarView;
+  }
   monthCalendarView.classList.toggle("hidden", currentCalendarView !== "month");
   weekCalendarView.classList.toggle("hidden", currentCalendarView !== "week");
 
@@ -433,7 +552,6 @@ function renderWeekCalendar() {
     dayDate.setDate(startOfWeek.getDate() + dayOffset);
     const dayCard = createCalendarDayButton(dayDate, {
       showDayName: true,
-      previewLimit: 4,
       extraClassName: "week-calendar-day",
     });
     weekCalendarGrid.appendChild(dayCard);
@@ -444,7 +562,6 @@ function renderCalendar() {
   updateCalendarHeader();
   renderMonthCalendar();
   renderWeekCalendar();
-  updateSelectedDateSummary();
 }
 
 function handleCalendarDateSelection(event) {
@@ -454,16 +571,31 @@ function handleCalendarDateSelection(event) {
   }
 
   const selectedDate = button.dataset.date;
+  if (dateFilterMode) {
+    dateFilterMode.value = "day";
+  }
+  syncDateFilterModeUI();
   dateFilter.value = selectedDate;
+  if (dateRangeFrom) {
+    dateRangeFrom.value = "";
+  }
+  if (dateRangeTo) {
+    dateRangeTo.value = "";
+  }
   currentCalendarDate = createDateFromInput(selectedDate);
   updateTaskList();
 }
 
 function handleDateFilterChange() {
-  if (dateFilter.value) {
+  if (dateFilterMode && dateFilterMode.value === "day" && dateFilter.value) {
     currentCalendarDate = createDateFromInput(dateFilter.value);
   }
 
+  updateTaskList();
+}
+
+function handleDateFilterModeChange() {
+  syncDateFilterModeUI();
   updateTaskList();
 }
 
@@ -485,6 +617,16 @@ function moveCalendarMonth(offset) {
 
 function clearCalendarDateFilter() {
   dateFilter.value = "";
+  if (dateRangeFrom) {
+    dateRangeFrom.value = "";
+  }
+  if (dateRangeTo) {
+    dateRangeTo.value = "";
+  }
+  if (dateFilterMode) {
+    dateFilterMode.value = "day";
+  }
+  syncDateFilterModeUI();
   currentCalendarDate = new Date();
   updateTaskList();
 }
@@ -509,50 +651,138 @@ function resetForm() {
   updateFormMode();
 }
 
-function addMessage(text, tone = "info") {
-  const emptyMessage = messageArea.querySelector(".empty-message");
-  if (emptyMessage) {
-    emptyMessage.remove();
+let formFeedbackTimeoutId = null;
+const shownOnceFormFeedback = new Set();
+
+function clearFormFeedback() {
+  if (formFeedbackTimeoutId) {
+    window.clearTimeout(formFeedbackTimeoutId);
+    formFeedbackTimeoutId = null;
+  }
+  if (!formFeedback) {
+    return;
+  }
+  formFeedback.classList.add("hidden");
+  formFeedback.textContent = "";
+  formFeedback.className = "form-feedback hidden";
+}
+
+function showFormFeedback(text, tone = "info", options = {}) {
+  if (!formFeedback) {
+    return;
   }
 
-  const item = document.createElement("article");
-  item.className = `message-item ${tone}`;
+  const body = String(text).trim();
+  if (options.oncePerText && shownOnceFormFeedback.has(body)) {
+    return;
+  }
 
-  const timestamp = new Date().toLocaleTimeString("es-ES", {
+  if (options.oncePerText) {
+    shownOnceFormFeedback.add(body);
+    window.setTimeout(() => shownOnceFormFeedback.delete(body), 120000);
+  }
+
+  if (formFeedbackTimeoutId) {
+    window.clearTimeout(formFeedbackTimeoutId);
+    formFeedbackTimeoutId = null;
+  }
+
+  formFeedback.textContent = body;
+  formFeedback.className = `form-feedback form-feedback--${tone}`;
+  formFeedback.classList.remove("hidden");
+
+  formFeedbackTimeoutId = window.setTimeout(() => {
+    formFeedbackTimeoutId = null;
+    formFeedback.classList.add("hidden");
+    formFeedback.textContent = "";
+    formFeedback.className = "form-feedback hidden";
+  }, 6000);
+}
+
+function getClosestAlertTask() {
+  const now = Date.now();
+  const pool = tasks.filter((task) => task.alarmEnabled && !task.completed);
+  if (!pool.length) {
+    return null;
+  }
+
+  const dueNotAcknowledged = pool.filter(
+    (task) => !task.notified && now >= getReminderMomentMs(task)
+  );
+  if (dueNotAcknowledged.length) {
+    return [...dueNotAcknowledged].sort(
+      (a, b) => getReminderMomentMs(a) - getReminderMomentMs(b)
+    )[0];
+  }
+
+  const upcoming = pool
+    .map((task) => ({ task, at: getReminderMomentMs(task) }))
+    .filter((entry) => entry.at > now)
+    .sort((a, b) => a.at - b.at);
+  if (upcoming.length) {
+    return upcoming[0].task;
+  }
+
+  return null;
+}
+
+function renderClosestAlertPanel() {
+  if (!messageArea) {
+    return;
+  }
+
+  const task = getClosestAlertTask();
+  if (!task) {
+    messageArea.innerHTML =
+      '<p class="empty-message">Aqui veras el recordatorio mas cercano en el tiempo.</p>';
+    return;
+  }
+
+  const reminderAt = getReminderMomentMs(task);
+  const stamp = new Date(reminderAt).toLocaleString("es-ES", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
     hour: "2-digit",
     minute: "2-digit",
   });
+  const now = Date.now();
+  const dueNow = !task.notified && now >= reminderAt;
+  const tone = dueNow ? "warning" : "info";
+  const schedule = `${formatDate(task)} · ${formatTimeRange(task)}`;
+  const headline = dueNow ? "Recordatorio" : "Proximo recordatorio";
+  const line = `${headline}: ${task.activity} — ${schedule}`;
 
+  const item = document.createElement("article");
+  item.className = `message-item ${tone}`;
   item.innerHTML = `
-    <strong>${timestamp}</strong>
-    <p>${escapeHtml(text)}</p>
+    <strong>${escapeHtml(stamp)}</strong>
+    <p>${escapeHtml(line)}</p>
   `;
-
-  messageArea.prepend(item);
+  messageArea.innerHTML = "";
+  messageArea.appendChild(item);
 }
 
 async function requestNotificationPermission() {
   if (!("Notification" in window)) {
-    addMessage("Este navegador no admite notificaciones del sistema.", "warning");
+    showFormFeedback("Este navegador no admite notificaciones del sistema.", "warning");
     return "denied";
   }
 
   const permission = await Notification.requestPermission();
 
   if (permission === "granted") {
-    addMessage("Notificaciones activadas correctamente.", "success");
+    showFormFeedback("Notificaciones activadas correctamente.", "success");
   } else {
-    addMessage("Las notificaciones fueron bloqueadas por el navegador.", "warning");
+    showFormFeedback("Las notificaciones fueron bloqueadas por el navegador.", "warning");
   }
 
   return permission;
 }
 
 function notifyTask(task) {
-  const taskMoment = `${formatDate(task)} a las ${formatTime(task.time)}`;
+  const taskMoment = `${formatDate(task)} · ${formatTimeRange(task)}`;
   const message = `Recordatorio: ${task.activity} - ${taskMoment}`;
-
-  addMessage(message, "warning");
 
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification("Alarma de cumplimiento", {
@@ -563,32 +793,21 @@ function notifyTask(task) {
 
 function getFilteredTasks() {
   const filters = getActiveFilters();
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
 
   return tasks.filter((task) => {
-    const status = getTaskStatus(task);
-    const taskDate = new Date(`${task.date}T00:00:00`);
     const priority = getTaskPriority(task);
     const matchesSearch =
       !filters.search || task.activity.toLowerCase().includes(filters.search);
-    const matchesStatus = filters.status === "all" || status.key === filters.status;
-    const matchesDate = !filters.date || task.date === filters.date;
+    const matchesDate = taskMatchesDateFilter(task.date, filters);
     const matchesPriority = filters.priority === "all" || priority === filters.priority;
-    const matchesPeriod =
-      filters.period === "all" ||
-      (filters.period === "today" && isSameDay(taskDate, now)) ||
-      (filters.period === "week" && isInCurrentWeek(taskDate, now));
 
-    return matchesSearch && matchesStatus && matchesDate && matchesPriority && matchesPeriod;
+    return matchesSearch && matchesDate && matchesPriority;
   });
 }
 
 function updateTaskList() {
   const filteredTasks = getFilteredTasks();
-  const sortedTasks = [...filteredTasks].sort((firstTask, secondTask) => {
-    return createTaskTimestamp(firstTask) - createTaskTimestamp(secondTask);
-  });
+  const sortedTasks = [...filteredTasks].sort(compareTasksBySchedule);
 
   if (!tasks.length) {
     resultsSummary.textContent = "Mostrando todas las tareas.";
@@ -606,26 +825,34 @@ function updateTaskList() {
     taskList.innerHTML = tasks.length
       ? '<p class="empty-state">No hay tareas con ese filtro.</p>'
       : '<p class="empty-state">Todavia no hay tareas registradas.</p>';
+    if (taskListDisclosure) {
+      taskListDisclosure.classList.remove("task-list-disclosure--all-completed");
+    }
+    renderClosestAlertPanel();
     return;
   }
 
   taskList.innerHTML = "";
 
   sortedTasks.forEach((task) => {
-    const status = getTaskStatus(task);
     const priority = getTaskPriority(task);
     const taskItem = document.createElement("article");
-    taskItem.className = `task-item ${status.key}`;
+    const completedClass = task.completed ? " task-item--completed" : "";
+    taskItem.className = `task-item priority-${priority}${completedClass}`;
+
+    const activityIcon = pickActivityIcon(task.activity);
 
     taskItem.innerHTML = `
       <div class="task-header">
-        <div>
-          <h3 class="task-title">${escapeHtml(task.activity)}</h3>
-          <p class="small-note">${task.alarmEnabled ? "Con alarma activa" : "Sin alarma"}${task.isDuplicate ? " | Tarea duplicada" : ""}</p>
+        <div class="task-heading">
+          <span class="task-activity-icon" title="Tipo de actividad" aria-hidden="true">${activityIcon}</span>
+          <div class="task-heading-text">
+            <h3 class="task-title">${escapeHtml(task.activity)}</h3>
+            <p class="small-note">${task.completed ? "Completada. " : ""}${task.alarmEnabled ? "Con alarma activa" : "Sin alarma"}${task.isDuplicate ? " | Tarea duplicada" : ""}</p>
+          </div>
         </div>
         <div class="task-badges">
           <span class="priority-chip ${priority}">${getPriorityLabel(priority)}</span>
-          <span class="status-chip ${status.key}">${status.label}</span>
         </div>
       </div>
 
@@ -635,8 +862,8 @@ function updateTaskList() {
           <span>${formatDate(task)}</span>
         </div>
         <div class="task-meta">
-          <strong>Hora</strong>
-          <span>${formatTime(task.time)}</span>
+          <strong>Horario</strong>
+          <span>${formatTimeRange(task)}</span>
         </div>
         <div class="task-meta">
           <strong>Recordatorio</strong>
@@ -666,6 +893,14 @@ function updateTaskList() {
 
     taskList.appendChild(taskItem);
   });
+
+  if (taskListDisclosure) {
+    const allFilteredCompleted =
+      sortedTasks.length > 0 && sortedTasks.every((task) => task.completed);
+    taskListDisclosure.classList.toggle("task-list-disclosure--all-completed", allFilteredCompleted);
+  }
+
+  renderClosestAlertPanel();
 }
 
 function createTaskFromForm(formData) {
@@ -673,7 +908,8 @@ function createTaskFromForm(formData) {
     id: generateId(),
     date: formData.get("taskDate"),
     activity: formData.get("taskActivity").trim(),
-    time: formData.get("taskTime"),
+    timeStart: formData.get("taskTimeStart"),
+    timeEnd: formData.get("taskTimeEnd"),
     reminderMinutes: Number(formData.get("taskReminder")),
     priority: formData.get("taskPriority") || "medium",
     alarmEnabled: formData.get("taskAlarm") === "on",
@@ -686,7 +922,9 @@ function createTaskFromForm(formData) {
 function updateTaskFromForm(task, formData) {
   task.date = formData.get("taskDate");
   task.activity = formData.get("taskActivity").trim();
-  task.time = formData.get("taskTime");
+  task.timeStart = formData.get("taskTimeStart");
+  task.timeEnd = formData.get("taskTimeEnd");
+  delete task.time;
   task.reminderMinutes = Number(formData.get("taskReminder"));
   task.priority = formData.get("taskPriority") || "medium";
   task.alarmEnabled = formData.get("taskAlarm") === "on";
@@ -706,22 +944,31 @@ function startEditTask(taskId) {
   editingTaskId = task.id;
   document.querySelector("#taskDate").value = task.date;
   document.querySelector("#taskActivity").value = task.activity;
-  document.querySelector("#taskTime").value = task.time;
+  const start = getTaskTimeStart(task);
+  const end = getTaskTimeEnd(task);
+  taskTimeStartInput.value = start;
+  taskTimeEndInput.value = end;
   document.querySelector("#taskReminder").value = String(task.reminderMinutes);
   document.querySelector("#taskPriority").value = getTaskPriority(task);
   document.querySelector("#taskAlarm").checked = task.alarmEnabled;
   updateFormMode();
-  addMessage(`Editando tarea: ${task.activity}.`, "info");
+  showFormFeedback(`Editando tarea: ${task.activity}.`, "info");
 }
 
 function handleTaskSubmit(event) {
   event.preventDefault();
 
   const formData = new FormData(taskForm);
+  const rangeError = validateTimeRangeForm(formData);
+  if (rangeError) {
+    showFormFeedback(rangeError, "danger");
+    return;
+  }
+
   const newTask = createTaskFromForm(formData);
 
   if (!newTask.activity) {
-    addMessage("La actividad no puede estar vacia.", "danger");
+    showFormFeedback("La actividad no puede estar vacia.", "danger");
     return;
   }
 
@@ -729,7 +976,7 @@ function handleTaskSubmit(event) {
     const taskToUpdate = tasks.find((task) => task.id === editingTaskId);
     if (!taskToUpdate) {
       resetForm();
-      addMessage("La tarea que intentabas editar ya no existe.", "warning");
+      showFormFeedback("La tarea que intentabas editar ya no existe.", "warning");
       updateTaskList();
       return;
     }
@@ -737,7 +984,7 @@ function handleTaskSubmit(event) {
     updateTaskFromForm(taskToUpdate, formData);
     saveTasks();
     updateTaskList();
-    addMessage(`Tarea actualizada: ${taskToUpdate.activity}.`, "success");
+    showFormFeedback(`Tarea actualizada: ${taskToUpdate.activity}.`, "success");
     resetForm();
     return;
   }
@@ -747,7 +994,7 @@ function handleTaskSubmit(event) {
   updateTaskList();
   resetForm();
 
-  addMessage(`Tarea guardada: ${newTask.activity}.`, "success");
+  showFormFeedback(`Tarea guardada: ${newTask.activity}.`, "success");
 }
 
 function duplicateTask(taskId) {
@@ -763,12 +1010,15 @@ function duplicateTask(taskId) {
     completed: false,
     isDuplicate: true,
     notified: false,
+    timeStart: getTaskTimeStart(originalTask),
+    timeEnd: getTaskTimeEnd(originalTask),
   };
+  delete duplicate.time;
 
   tasks.push(duplicate);
   saveTasks();
   updateTaskList();
-  addMessage(`Tarea duplicada: ${duplicate.activity}.`, "success");
+  showFormFeedback(`Tarea duplicada: ${duplicate.activity}.`, "success");
 }
 
 function toggleTask(taskId) {
@@ -781,12 +1031,11 @@ function toggleTask(taskId) {
   resetTaskNotification(task);
   saveTasks();
   updateTaskList();
-  addMessage(
-    task.completed
-      ? `Tarea completada: ${task.activity}.`
-      : `Tarea reabierta: ${task.activity}.`,
-    "info"
-  );
+  if (task.completed) {
+    showFormFeedback(`Tarea completada: ${task.activity}.`, "info");
+  } else {
+    showFormFeedback(`Tarea reabierta: ${task.activity}.`, "info", { oncePerText: true });
+  }
 }
 
 function deleteTask(taskId) {
@@ -801,7 +1050,7 @@ function deleteTask(taskId) {
   updateTaskList();
 
   if (task) {
-    addMessage(`Tarea eliminada: ${task.activity}.`, "danger");
+    showFormFeedback(`Tarea eliminada: ${task.activity}.`, "danger");
   }
 }
 
@@ -831,42 +1080,62 @@ function handleTaskActions(event) {
 }
 
 function clearMessages() {
-  messageArea.innerHTML = '<p class="empty-message">Aqui apareceran las alertas y recordatorios.</p>';
+  clearFormFeedback();
 }
 
 function clearFilters() {
   searchFilter.value = "";
-  statusFilter.value = "all";
   dateFilter.value = "";
+  if (dateRangeFrom) {
+    dateRangeFrom.value = "";
+  }
+  if (dateRangeTo) {
+    dateRangeTo.value = "";
+  }
+  if (dateFilterMode) {
+    dateFilterMode.value = "day";
+  }
+  syncDateFilterModeUI();
   priorityFilter.value = "all";
-  periodFilter.value = "all";
   currentCalendarDate = new Date();
   updateTaskList();
 }
 
 function checkTaskAlerts() {
   const now = Date.now();
-  let hasChanges = false;
+  const eligible = tasks.filter(
+    (task) =>
+      task.alarmEnabled &&
+      !task.completed &&
+      !task.notified &&
+      now >= getReminderMomentMs(task)
+  );
 
-  tasks.forEach((task) => {
-    if (!task.alarmEnabled || task.completed || task.notified) {
-      return;
+  if (!eligible.length) {
+    return;
+  }
+
+  eligible.sort((firstTask, secondTask) => {
+    const startA = createTaskTimestamp(firstTask);
+    const startB = createTaskTimestamp(secondTask);
+    const distA = Math.abs(startA - now);
+    const distB = Math.abs(startB - now);
+    if (distA !== distB) {
+      return distA - distB;
     }
 
-    const taskTime = createTaskTimestamp(task);
-    const reminderTime = taskTime - task.reminderMinutes * 60000;
-
-    if (now >= reminderTime) {
-      notifyTask(task);
-      task.notified = true;
-      hasChanges = true;
+    if (startA !== startB) {
+      return startA - startB;
     }
+
+    return String(firstTask.activity || "").localeCompare(String(secondTask.activity || ""), "es");
   });
 
-  if (hasChanges) {
-    saveTasks();
-    updateTaskList();
-  }
+  const task = eligible[0];
+  notifyTask(task);
+  task.notified = true;
+  saveTasks();
+  updateTaskList();
 }
 
 taskForm.addEventListener("submit", handleTaskSubmit);
@@ -877,17 +1146,472 @@ enableNotificationsBtn.addEventListener("click", requestNotificationPermission);
 clearMessagesBtn.addEventListener("click", clearMessages);
 cancelEditBtn.addEventListener("click", resetForm);
 searchFilter.addEventListener("input", updateTaskList);
-statusFilter.addEventListener("change", updateTaskList);
 dateFilter.addEventListener("change", handleDateFilterChange);
+if (dateFilterMode) {
+  dateFilterMode.addEventListener("change", handleDateFilterModeChange);
+}
+if (dateRangeFrom) {
+  dateRangeFrom.addEventListener("change", updateTaskList);
+}
+if (dateRangeTo) {
+  dateRangeTo.addEventListener("change", updateTaskList);
+}
 priorityFilter.addEventListener("change", updateTaskList);
-periodFilter.addEventListener("change", updateTaskList);
 clearFiltersBtn.addEventListener("click", clearFilters);
 prevMonthBtn.addEventListener("click", () => moveCalendarMonth(-1));
 nextMonthBtn.addEventListener("click", () => moveCalendarMonth(1));
 resetCalendarBtn.addEventListener("click", clearCalendarDateFilter);
-monthViewBtn.addEventListener("click", () => setCalendarView("month"));
-weekViewBtn.addEventListener("click", () => setCalendarView("week"));
+if (calendarViewSelect) {
+  calendarViewSelect.addEventListener("change", (event) => {
+    const nextView = event.target.value;
+    if (nextView === "month" || nextView === "week") {
+      setCalendarView(nextView);
+    }
+  });
+}
 
+const analogScheduleDialog = document.querySelector("#analogScheduleDialog");
+const analogScheduleCancelBtn = document.querySelector("#analogScheduleCancelBtn");
+const analogScheduleSaveBtn = document.querySelector("#analogScheduleSaveBtn");
+const analogScheduleError = document.querySelector("#analogScheduleError");
+const analogClocksMount = document.querySelector("#analogClocksMount");
+
+const analogState = {
+  start: { h: 9, m: 0 },
+  end: { h: 10, m: 0 },
+};
+
+let analogClockRef = null;
+let analogClockActiveKey = "start";
+let analogModeStartBtn = null;
+let analogModeEndBtn = null;
+let analogMeridiemAmBtn = null;
+let analogMeridiemPmBtn = null;
+
+function padTimeUnit(value) {
+  return String(value).padStart(2, "0");
+}
+
+function formatHMParts(hours, minutes) {
+  const h = ((hours % 24) + 24) % 24;
+  const m = ((minutes % 60) + 60) % 60;
+  return `${padTimeUnit(h)}:${padTimeUnit(m)}`;
+}
+
+function hour24To12Parts(h24) {
+  const h = ((h24 % 24) + 24) % 24;
+  const isPm = h >= 12;
+  let hour12 = h % 12;
+  if (hour12 === 0) {
+    hour12 = 12;
+  }
+  return { hour12, isPm };
+}
+
+function hour12AndMeridiemTo24(hour12, isPm) {
+  if (!isPm) {
+    if (hour12 === 12) {
+      return 0;
+    }
+    return hour12;
+  }
+  if (hour12 === 12) {
+    return 12;
+  }
+  return hour12 + 12;
+}
+
+function formatAnalogReadout(h24, minutes) {
+  const h = ((h24 % 24) + 24) % 24;
+  const m = ((minutes % 60) + 60) % 60;
+  const { hour12, isPm } = hour24To12Parts(h);
+  const suffix = isPm ? "p. m." : "a. m.";
+  return `${hour12}:${padTimeUnit(m)} ${suffix}`;
+}
+
+function parseTimeInputToParts(value) {
+  const trimmed = String(value || "").trim();
+  const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
+  if (!match) {
+    return null;
+  }
+
+  const h = Number(match[1]);
+  const m = Number(match[2]);
+  if (!Number.isInteger(h) || !Number.isInteger(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+    return null;
+  }
+
+  return { h, m };
+}
+
+function syncAnalogStateFromInputs() {
+  const startParsed = parseTimeInputToParts(taskTimeStartInput.value);
+  const endParsed = parseTimeInputToParts(taskTimeEndInput.value);
+  analogState.start = startParsed || { h: 9, m: 0 };
+  analogState.end = endParsed || { h: 10, m: 0 };
+}
+
+function setAnalogClockMode(key) {
+  if (key !== "start" && key !== "end") {
+    return;
+  }
+
+  analogClockActiveKey = key;
+
+  if (analogModeStartBtn && analogModeEndBtn) {
+    analogModeStartBtn.classList.toggle("is-active", key === "start");
+    analogModeEndBtn.classList.toggle("is-active", key === "end");
+    analogModeStartBtn.setAttribute("aria-selected", String(key === "start"));
+    analogModeEndBtn.setAttribute("aria-selected", String(key === "end"));
+  }
+
+  updateAnalogMeridiemButtons();
+  updateAnalogClockHands();
+}
+
+function updateAnalogMeridiemButtons() {
+  if (!analogMeridiemAmBtn || !analogMeridiemPmBtn) {
+    return;
+  }
+
+  const { h } = analogState[analogClockActiveKey];
+  const isPm = h >= 12;
+  analogMeridiemAmBtn.classList.toggle("is-active", !isPm);
+  analogMeridiemPmBtn.classList.toggle("is-active", isPm);
+  analogMeridiemAmBtn.setAttribute("aria-selected", String(!isPm));
+  analogMeridiemPmBtn.setAttribute("aria-selected", String(isPm));
+}
+
+function setAnalogMeridiem(isPm) {
+  const key = analogClockActiveKey;
+  const { hour12 } = hour24To12Parts(analogState[key].h);
+  analogState[key].h = hour12AndMeridiemTo24(hour12, isPm);
+  updateAnalogMeridiemButtons();
+  updateAnalogClockHands();
+}
+
+function updateAnalogClockHands() {
+  const ref = analogClockRef;
+  if (!ref) {
+    return;
+  }
+
+  const key = analogClockActiveKey;
+  const { h, m } = analogState[key];
+  const minRad = ((m * 6 - 90) * Math.PI) / 180;
+  const hourRad = ((((h % 12) + m / 60) * 30 - 90) * Math.PI) / 180;
+  const hourLen = 46;
+  const minLen = 72;
+
+  ref.handHour.setAttribute("x2", String(Math.cos(hourRad) * hourLen));
+  ref.handHour.setAttribute("y2", String(Math.sin(hourRad) * hourLen));
+  ref.handMin.setAttribute("x2", String(Math.cos(minRad) * minLen));
+  ref.handMin.setAttribute("y2", String(Math.sin(minRad) * minLen));
+  ref.readoutLabel.textContent = key === "start" ? "Inicio" : "Fin";
+  ref.readout.textContent = formatAnalogReadout(h, m);
+
+  if (ref.summary) {
+    ref.summary.textContent = `Inicio ${formatAnalogReadout(analogState.start.h, analogState.start.m)} · Fin ${formatAnalogReadout(analogState.end.h, analogState.end.m)}`;
+  }
+}
+
+function hideAnalogScheduleError() {
+  if (analogScheduleError) {
+    analogScheduleError.textContent = "";
+    analogScheduleError.classList.add("hidden");
+  }
+}
+
+function showAnalogScheduleError(message) {
+  if (!analogScheduleError) {
+    return;
+  }
+
+  analogScheduleError.textContent = message;
+  analogScheduleError.classList.remove("hidden");
+}
+
+function polarFromClockPointer(event, svg) {
+  const pt = svg.createSVGPoint();
+  pt.x = event.clientX;
+  pt.y = event.clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) {
+    return null;
+  }
+
+  const p = pt.matrixTransform(ctm.inverse());
+  const x = p.x;
+  const y = p.y;
+  const r = Math.hypot(x, y);
+  const degNorm = (Math.atan2(x, -y) * 180) / Math.PI;
+  const deg = degNorm < 0 ? degNorm + 360 : degNorm;
+  return { r, deg };
+}
+
+function applyClockPointerToState(event) {
+  const ref = analogClockRef;
+  if (!ref || !ref.svg) {
+    return;
+  }
+
+  const key = analogClockActiveKey;
+  const polar = polarFromClockPointer(event, ref.svg);
+  if (!polar || polar.r < 18) {
+    return;
+  }
+
+  if (polar.r >= 66 && polar.r <= 96) {
+    const slot = Math.floor((polar.deg + 15) / 30) % 12;
+    const hour12 = slot === 0 ? 12 : slot;
+    const isPm = analogState[key].h >= 12;
+    analogState[key].h = hour12AndMeridiemTo24(hour12, isPm);
+    updateAnalogMeridiemButtons();
+    updateAnalogClockHands();
+    return;
+  }
+
+  if (polar.r >= 24 && polar.r < 66) {
+    analogState[key].m = Math.floor((polar.deg + 3) / 6) % 60;
+    updateAnalogClockHands();
+  }
+}
+
+function buildAnalogClock() {
+  const NS = "http://www.w3.org/2000/svg";
+  const wrap = document.createElement("div");
+  wrap.className = "analog-clock";
+
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "-100 -100 200 200");
+  svg.setAttribute("class", "analog-clock__svg");
+  svg.style.touchAction = "none";
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "Reloj para elegir hora de inicio o fin");
+
+  const face = document.createElementNS(NS, "circle");
+  face.setAttribute("r", "98");
+  face.setAttribute("class", "analog-clock__face");
+  svg.appendChild(face);
+
+  for (let i = 0; i < 60; i += 1) {
+    const rad = ((i * 6 - 90) * Math.PI) / 180;
+    const inner = i % 5 === 0 ? 54 : 56;
+    const outer = 62;
+    const tick = document.createElementNS(NS, "line");
+    tick.setAttribute("x1", String(Math.cos(rad) * inner));
+    tick.setAttribute("y1", String(Math.sin(rad) * inner));
+    tick.setAttribute("x2", String(Math.cos(rad) * outer));
+    tick.setAttribute("y2", String(Math.sin(rad) * outer));
+    tick.setAttribute("class", i % 5 === 0 ? "analog-clock__tick analog-clock__tick--major" : "analog-clock__tick");
+    svg.appendChild(tick);
+  }
+
+  for (let k = 1; k <= 12; k += 1) {
+    const rad = ((k * 30 - 90) * Math.PI) / 180;
+    const tx = Math.cos(rad) * 84;
+    const ty = Math.sin(rad) * 84;
+    const text = document.createElementNS(NS, "text");
+    text.setAttribute("x", String(tx));
+    text.setAttribute("y", String(ty));
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("dominant-baseline", "central");
+    text.setAttribute("class", "analog-clock__hour-label");
+    text.textContent = String(k);
+    svg.appendChild(text);
+  }
+
+  const handHour = document.createElementNS(NS, "line");
+  handHour.setAttribute("x1", "0");
+  handHour.setAttribute("y1", "0");
+  handHour.setAttribute("stroke-linecap", "round");
+  handHour.setAttribute("class", "analog-clock__hand analog-clock__hand--hour");
+
+  const handMin = document.createElementNS(NS, "line");
+  handMin.setAttribute("x1", "0");
+  handMin.setAttribute("y1", "0");
+  handMin.setAttribute("stroke-linecap", "round");
+  handMin.setAttribute("class", "analog-clock__hand analog-clock__hand--minute");
+
+  const hub = document.createElementNS(NS, "circle");
+  hub.setAttribute("r", "5");
+  hub.setAttribute("class", "analog-clock__hub");
+
+  svg.appendChild(handHour);
+  svg.appendChild(handMin);
+  svg.appendChild(hub);
+
+  const readoutLabel = document.createElement("div");
+  readoutLabel.className = "analog-clock__readout-label";
+  readoutLabel.textContent = "Inicio";
+
+  const readout = document.createElement("div");
+  readout.className = "analog-clock__readout";
+  readout.setAttribute("aria-live", "polite");
+
+  const summary = document.createElement("p");
+  summary.className = "analog-clock__summary";
+
+  wrap.appendChild(svg);
+  wrap.appendChild(readoutLabel);
+  wrap.appendChild(readout);
+  wrap.appendChild(summary);
+
+  const ref = { wrap, svg, handHour, handMin, readoutLabel, readout, summary };
+
+  svg.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    svg.setPointerCapture(e.pointerId);
+    applyClockPointerToState(e);
+  });
+
+  svg.addEventListener("pointermove", (e) => {
+    if (svg.hasPointerCapture(e.pointerId)) {
+      e.preventDefault();
+      applyClockPointerToState(e);
+    }
+  });
+
+  svg.addEventListener("pointerup", (e) => {
+    if (svg.hasPointerCapture(e.pointerId)) {
+      svg.releasePointerCapture(e.pointerId);
+    }
+  });
+
+  svg.addEventListener("pointercancel", (e) => {
+    if (svg.hasPointerCapture(e.pointerId)) {
+      svg.releasePointerCapture(e.pointerId);
+    }
+  });
+
+  return ref;
+}
+
+function openAnalogScheduleDialog(preferredMode) {
+  if (!analogScheduleDialog || typeof analogScheduleDialog.showModal !== "function") {
+    return;
+  }
+
+  hideAnalogScheduleError();
+  syncAnalogStateFromInputs();
+
+  if (preferredMode === "start" || preferredMode === "end") {
+    setAnalogClockMode(preferredMode);
+  } else {
+    setAnalogClockMode("start");
+  }
+
+  analogScheduleDialog.showModal();
+}
+
+function trySaveAnalogScheduleFromDialog() {
+  const { start, end } = analogState;
+  const startTotal = start.h * 60 + start.m;
+  const endTotal = end.h * 60 + end.m;
+
+  if (endTotal < startTotal) {
+    showAnalogScheduleError("La hora de fin debe ser posterior o igual a la de inicio.");
+    return;
+  }
+
+  taskTimeStartInput.value = formatHMParts(start.h, start.m);
+  taskTimeEndInput.value = formatHMParts(end.h, end.m);
+  hideAnalogScheduleError();
+  if (analogScheduleDialog) {
+    analogScheduleDialog.close();
+  }
+}
+
+function initAnalogScheduleDialog() {
+  if (!analogClocksMount) {
+    return;
+  }
+
+  const modeBar = document.createElement("div");
+  modeBar.className = "analog-clock-mode";
+  modeBar.setAttribute("role", "tablist");
+  modeBar.setAttribute("aria-label", "Editar hora de inicio o fin");
+
+  analogModeStartBtn = document.createElement("button");
+  analogModeStartBtn.type = "button";
+  analogModeStartBtn.className = "analog-clock-mode__btn is-active";
+  analogModeStartBtn.setAttribute("role", "tab");
+  analogModeStartBtn.setAttribute("aria-selected", "true");
+  analogModeStartBtn.id = "analogModeStartBtn";
+  analogModeStartBtn.textContent = "Inicio";
+
+  analogModeEndBtn = document.createElement("button");
+  analogModeEndBtn.type = "button";
+  analogModeEndBtn.className = "analog-clock-mode__btn";
+  analogModeEndBtn.setAttribute("role", "tab");
+  analogModeEndBtn.setAttribute("aria-selected", "false");
+  analogModeEndBtn.id = "analogModeEndBtn";
+  analogModeEndBtn.textContent = "Fin";
+
+  modeBar.appendChild(analogModeStartBtn);
+  modeBar.appendChild(analogModeEndBtn);
+
+  const meridiemBar = document.createElement("div");
+  meridiemBar.className = "analog-clock-meridiem";
+  meridiemBar.setAttribute("role", "tablist");
+  meridiemBar.setAttribute("aria-label", "Antes o despues del mediodia");
+
+  analogMeridiemAmBtn = document.createElement("button");
+  analogMeridiemAmBtn.type = "button";
+  analogMeridiemAmBtn.className = "analog-clock-meridiem__btn is-active";
+  analogMeridiemAmBtn.setAttribute("role", "tab");
+  analogMeridiemAmBtn.setAttribute("aria-selected", "true");
+  analogMeridiemAmBtn.id = "analogMeridiemAmBtn";
+  analogMeridiemAmBtn.textContent = "a. m.";
+
+  analogMeridiemPmBtn = document.createElement("button");
+  analogMeridiemPmBtn.type = "button";
+  analogMeridiemPmBtn.className = "analog-clock-meridiem__btn";
+  analogMeridiemPmBtn.setAttribute("role", "tab");
+  analogMeridiemPmBtn.setAttribute("aria-selected", "false");
+  analogMeridiemPmBtn.id = "analogMeridiemPmBtn";
+  analogMeridiemPmBtn.textContent = "p. m.";
+
+  meridiemBar.appendChild(analogMeridiemAmBtn);
+  meridiemBar.appendChild(analogMeridiemPmBtn);
+
+  analogClockRef = buildAnalogClock();
+  analogClocksMount.appendChild(modeBar);
+  analogClocksMount.appendChild(meridiemBar);
+  analogClocksMount.appendChild(analogClockRef.wrap);
+
+  analogModeStartBtn.addEventListener("click", () => setAnalogClockMode("start"));
+  analogModeEndBtn.addEventListener("click", () => setAnalogClockMode("end"));
+  analogMeridiemAmBtn.addEventListener("click", () => setAnalogMeridiem(false));
+  analogMeridiemPmBtn.addEventListener("click", () => setAnalogMeridiem(true));
+
+  if (taskTimeStartInput) {
+    taskTimeStartInput.addEventListener("click", () => openAnalogScheduleDialog("start"));
+  }
+
+  if (taskTimeEndInput) {
+    taskTimeEndInput.addEventListener("click", () => openAnalogScheduleDialog("end"));
+  }
+
+  if (analogScheduleCancelBtn) {
+    analogScheduleCancelBtn.addEventListener("click", () => {
+      hideAnalogScheduleError();
+      if (analogScheduleDialog) {
+        analogScheduleDialog.close();
+      }
+    });
+  }
+
+  if (analogScheduleSaveBtn) {
+    analogScheduleSaveBtn.addEventListener("click", trySaveAnalogScheduleFromDialog);
+  }
+}
+
+initAnalogScheduleDialog();
+
+initTheme();
+syncDateFilterModeUI();
 updateFormMode();
 updateTaskList();
 checkTaskAlerts();
