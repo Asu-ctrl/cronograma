@@ -124,7 +124,7 @@ function pickActivityIcon(activityText) {
     [/medico|salud|cita|hospital|clinica|farmacia/, "🏥"],
     [/ejercicio|gym|gimnasio|deporte|correr|caminar|entren/, "🏃"],
     [/viaje|vuelo|avion|tren|hotel|aeropuerto/, "✈️"],
-    [/estudiar|clase|examen|curso|universidad|tarea escolar/, "📚"],
+    [/estudiar|clase|examen|curso|universidad|tarea escolar/, "📝"],
     [/comida|cocinar|almuerzo|cena|desayuno|receta/, "🍽️"],
     [/limpiar|lavar|hogar|ordenar|casa/, "🧹"],
     [/pago|factura|banco|dinero|transferencia|precio/, "💳"],
