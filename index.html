@@ -165,30 +165,16 @@
               <input id="searchFilter" type="text" placeholder="Buscar por nombre de tarea">
             </label>
             <div class="filter-date-block">
-              <label>
-                Filtrar por fecha
-                <select id="dateFilterMode" name="dateFilterMode" aria-label="Modo de filtro por fecha">
-                  <option value="day">Dia concreto</option>
-                  <option value="range">Rango personalizado</option>
-                </select>
-              </label>
-              <div id="dateFilterDayFields" class="filter-date-subfields">
+              <p id="dateFilterHeading" class="filter-date-heading">Filtrar por fecha</p>
+              <div class="filter-date-range-grid" role="group" aria-labelledby="dateFilterHeading">
                 <label>
-                  Fecha
-                  <input id="dateFilter" type="date" aria-label="Filtrar por una fecha">
+                  Desde
+                  <input id="dateRangeFrom" type="date" aria-label="Desde fecha">
                 </label>
-              </div>
-              <div id="dateFilterRangeFields" class="filter-date-subfields hidden">
-                <div class="filter-date-range-grid">
-                  <label>
-                    Desde
-                    <input id="dateRangeFrom" type="date" aria-label="Fecha inicial del rango">
-                  </label>
-                  <label>
-                    Hasta
-                    <input id="dateRangeTo" type="date" aria-label="Fecha final del rango">
-                  </label>
-                </div>
+                <label>
+                  Hasta
+                  <input id="dateRangeTo" type="date" aria-label="Hasta fecha">
+                </label>
               </div>
             </div>
             <label>

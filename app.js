@@ -13,12 +13,8 @@ const formTitle = document.querySelector("#formTitle");
 const submitTaskBtn = document.querySelector("#submitTaskBtn");
 const cancelEditBtn = document.querySelector("#cancelEditBtn");
 const searchFilter = document.querySelector("#searchFilter");
-const dateFilter = document.querySelector("#dateFilter");
-const dateFilterMode = document.querySelector("#dateFilterMode");
 const dateRangeFrom = document.querySelector("#dateRangeFrom");
 const dateRangeTo = document.querySelector("#dateRangeTo");
-const dateFilterDayFields = document.querySelector("#dateFilterDayFields");
-const dateFilterRangeFields = document.querySelector("#dateFilterRangeFields");
 const priorityFilter = document.querySelector("#priorityFilter");
 const clearFiltersBtn = document.querySelector("#clearFiltersBtn");
 const resultsSummary = document.querySelector("#resultsSummary");
@@ -38,7 +34,12 @@ const themeDarkBtn = document.querySelector("#themeDarkBtn");
 
 let tasks = loadTasks();
 let editingTaskId = null;
-let currentCalendarDate = dateFilter.value ? createDateFromInput(dateFilter.value) : new Date();
+let currentCalendarDate = new Date();
+if (dateRangeFrom && dateRangeFrom.value) {
+  currentCalendarDate = createDateFromInput(dateRangeFrom.value);
+} else if (dateRangeTo && dateRangeTo.value) {
+  currentCalendarDate = createDateFromInput(dateRangeTo.value);
+}
 let currentCalendarView = "month";
 
 function generateId() {
@@ -254,22 +255,10 @@ function getReminderLabel(task) {
 function getActiveFilters() {
   return {
     search: searchFilter.value.trim().toLowerCase(),
-    dateMode: dateFilterMode ? dateFilterMode.value : "day",
-    date: dateFilter.value,
     dateRangeFrom: dateRangeFrom ? dateRangeFrom.value : "",
     dateRangeTo: dateRangeTo ? dateRangeTo.value : "",
     priority: priorityFilter.value,
   };
-}
-
-function syncDateFilterModeUI() {
-  if (!dateFilterDayFields || !dateFilterRangeFields || !dateFilterMode) {
-    return;
-  }
-
-  const isRange = dateFilterMode.value === "range";
-  dateFilterDayFields.classList.toggle("hidden", isRange);
-  dateFilterRangeFields.classList.toggle("hidden", !isRange);
 }
 
 function normalizeDateRangeBounds(fromRaw, toRaw) {
@@ -283,43 +272,46 @@ function normalizeDateRangeBounds(fromRaw, toRaw) {
   return { from, to };
 }
 
+function getEffectiveDateFilterBounds(fromRaw, toRaw) {
+  let { from, to } = normalizeDateRangeBounds(fromRaw, toRaw);
+  if (from && !to) {
+    to = from;
+  }
+  if (!from && to) {
+    from = to;
+  }
+  return { from, to };
+}
+
 function taskMatchesDateFilter(taskDateStr, filters) {
-  if (filters.dateMode === "range") {
-    const { from, to } = normalizeDateRangeBounds(filters.dateRangeFrom, filters.dateRangeTo);
-    if (!from && !to) {
-      return true;
-    }
-    if (from && taskDateStr < from) {
-      return false;
-    }
-    if (to && taskDateStr > to) {
-      return false;
-    }
+  const { from, to } = getEffectiveDateFilterBounds(filters.dateRangeFrom, filters.dateRangeTo);
+  if (!from && !to) {
     return true;
   }
 
-  return !filters.date || taskDateStr === filters.date;
+  return taskDateStr >= from && taskDateStr <= to;
 }
 
 function getDateFilterCalendarState(dayValue) {
-  const mode = dateFilterMode ? dateFilterMode.value : "day";
-  if (mode === "day") {
-    const sel = dateFilter.value;
-    return { mode: "day", selected: Boolean(sel && dayValue === sel) };
-  }
-
-  const { from, to } = normalizeDateRangeBounds(
+  const { from, to } = getEffectiveDateFilterBounds(
     dateRangeFrom ? dateRangeFrom.value : "",
     dateRangeTo ? dateRangeTo.value : ""
   );
   if (!from && !to) {
-    return { mode: "range", inRange: false, isStart: false, isEnd: false };
+    return {
+      mode: "range",
+      inRange: false,
+      isStart: false,
+      isEnd: false,
+      isSingleEffectiveDay: false,
+    };
   }
 
-  const inRange = (!from || dayValue >= from) && (!to || dayValue <= to);
-  const isStart = Boolean(from && dayValue === from);
-  const isEnd = Boolean(to && dayValue === to);
-  return { mode: "range", inRange, isStart, isEnd };
+  const inRange = dayValue >= from && dayValue <= to;
+  const isStart = dayValue === from;
+  const isEnd = dayValue === to;
+  const isSingleEffectiveDay = from === to;
+  return { mode: "range", inRange, isStart, isEnd, isSingleEffectiveDay };
 }
 
 function getTaskPriority(task) {
@@ -457,26 +449,21 @@ function createCalendarDayButton(dayDate, options = {}) {
   if (dayValue === todayValue) {
     button.classList.add("today");
   }
-  if (calState.mode === "day" && calState.selected) {
-    button.classList.add("selected");
+  if (calState.inRange) {
+    button.classList.add("calendar-day--in-range");
   }
-  if (calState.mode === "range") {
-    if (calState.inRange) {
-      button.classList.add("calendar-day--in-range");
-    }
-    if (calState.isStart) {
-      button.classList.add("calendar-day--range-start");
-    }
-    if (calState.isEnd) {
-      button.classList.add("calendar-day--range-end");
-    }
+  if (calState.isStart) {
+    button.classList.add("calendar-day--range-start");
+  }
+  if (calState.isEnd) {
+    button.classList.add("calendar-day--range-end");
+  }
+  if (calState.isSingleEffectiveDay && calState.inRange) {
+    button.classList.add("selected");
   }
 
   button.dataset.date = dayValue;
-  const pressed =
-    calState.mode === "day"
-      ? calState.selected
-      : calState.isStart || calState.isEnd;
+  const pressed = calState.isStart || calState.isEnd;
   button.setAttribute("aria-pressed", String(pressed));
 
   const countLabel = dayTasks.length === 1 ? "1 actividad" : `${dayTasks.length} actividades`;
@@ -566,36 +553,26 @@ function renderCalendar() {
 
 function handleCalendarDateSelection(event) {
   const button = event.target.closest("button[data-date]");
-  if (!button) {
+  if (!button || !dateRangeFrom || !dateRangeTo) {
     return;
   }
 
   const selectedDate = button.dataset.date;
-  if (dateFilterMode) {
-    dateFilterMode.value = "day";
-  }
-  syncDateFilterModeUI();
-  dateFilter.value = selectedDate;
-  if (dateRangeFrom) {
-    dateRangeFrom.value = "";
-  }
-  if (dateRangeTo) {
-    dateRangeTo.value = "";
-  }
+  dateRangeFrom.value = selectedDate;
+  dateRangeTo.value = selectedDate;
   currentCalendarDate = createDateFromInput(selectedDate);
   updateTaskList();
 }
 
-function handleDateFilterChange() {
-  if (dateFilterMode && dateFilterMode.value === "day" && dateFilter.value) {
-    currentCalendarDate = createDateFromInput(dateFilter.value);
+function handleDateRangeFilterChange() {
+  const normalized = normalizeDateRangeBounds(
+    dateRangeFrom ? dateRangeFrom.value : "",
+    dateRangeTo ? dateRangeTo.value : ""
+  );
+  const anchor = normalized.from || normalized.to;
+  if (anchor) {
+    currentCalendarDate = createDateFromInput(anchor);
   }
-
-  updateTaskList();
-}
-
-function handleDateFilterModeChange() {
-  syncDateFilterModeUI();
   updateTaskList();
 }
 
@@ -616,17 +593,12 @@ function moveCalendarMonth(offset) {
 }
 
 function clearCalendarDateFilter() {
-  dateFilter.value = "";
   if (dateRangeFrom) {
     dateRangeFrom.value = "";
   }
   if (dateRangeTo) {
     dateRangeTo.value = "";
   }
-  if (dateFilterMode) {
-    dateFilterMode.value = "day";
-  }
-  syncDateFilterModeUI();
   currentCalendarDate = new Date();
   updateTaskList();
 }
@@ -1085,17 +1057,12 @@ function clearMessages() {
 
 function clearFilters() {
   searchFilter.value = "";
-  dateFilter.value = "";
   if (dateRangeFrom) {
     dateRangeFrom.value = "";
   }
   if (dateRangeTo) {
     dateRangeTo.value = "";
   }
-  if (dateFilterMode) {
-    dateFilterMode.value = "day";
-  }
-  syncDateFilterModeUI();
   priorityFilter.value = "all";
   currentCalendarDate = new Date();
   updateTaskList();
@@ -1146,15 +1113,11 @@ enableNotificationsBtn.addEventListener("click", requestNotificationPermission);
 clearMessagesBtn.addEventListener("click", clearMessages);
 cancelEditBtn.addEventListener("click", resetForm);
 searchFilter.addEventListener("input", updateTaskList);
-dateFilter.addEventListener("change", handleDateFilterChange);
-if (dateFilterMode) {
-  dateFilterMode.addEventListener("change", handleDateFilterModeChange);
-}
 if (dateRangeFrom) {
-  dateRangeFrom.addEventListener("change", updateTaskList);
+  dateRangeFrom.addEventListener("change", handleDateRangeFilterChange);
 }
 if (dateRangeTo) {
-  dateRangeTo.addEventListener("change", updateTaskList);
+  dateRangeTo.addEventListener("change", handleDateRangeFilterChange);
 }
 priorityFilter.addEventListener("change", updateTaskList);
 clearFiltersBtn.addEventListener("click", clearFilters);
@@ -1611,7 +1574,6 @@ function initAnalogScheduleDialog() {
 initAnalogScheduleDialog();
 
 initTheme();
-syncDateFilterModeUI();
 updateFormMode();
 updateTaskList();
 checkTaskAlerts();
