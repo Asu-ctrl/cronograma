@@ -143,8 +143,9 @@
               Selecciona un dia para ver rapidamente las actividades pendientes.
             </p>
             <div class="calendar-view-switch" role="group" aria-label="Cambiar vista del calendario">
-              <button id="monthViewBtn" class="ghost-btn is-active" type="button">Vista mensual</button>
+              <button id="dayViewBtn" class="ghost-btn is-active" type="button">Vista diaria</button>
               <button id="weekViewBtn" class="ghost-btn" type="button">Vista semanal</button>
+              <button id="monthViewBtn" class="ghost-btn" type="button">Vista mensual</button>
             </div>
           </div>
           <div class="calendar-controls">
@@ -154,7 +155,10 @@
             <button id="resetCalendarBtn" class="secondary-btn" type="button">Quitar fecha</button>
           </div>
         </div>
-        <div id="monthCalendarView" class="calendar-view">
+        <div id="dayCalendarView" class="calendar-view">
+          <div id="dayCalendarStrip" class="day-calendar-strip" role="group" aria-label="Dias de la semana"></div>
+        </div>
+        <div id="monthCalendarView" class="calendar-view hidden">
           <div class="calendar-weekdays" aria-hidden="true">
             <span>Lun</span>
             <span>Mar</span>

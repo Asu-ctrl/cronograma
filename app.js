@@ -22,8 +22,11 @@ const selectedDateSummary = document.querySelector("#selectedDateSummary");
 const prevMonthBtn = document.querySelector("#prevMonthBtn");
 const nextMonthBtn = document.querySelector("#nextMonthBtn");
 const resetCalendarBtn = document.querySelector("#resetCalendarBtn");
+const dayViewBtn = document.querySelector("#dayViewBtn");
 const monthViewBtn = document.querySelector("#monthViewBtn");
 const weekViewBtn = document.querySelector("#weekViewBtn");
+const dayCalendarView = document.querySelector("#dayCalendarView");
+const dayCalendarStrip = document.querySelector("#dayCalendarStrip");
 const monthCalendarView = document.querySelector("#monthCalendarView");
 const weekCalendarView = document.querySelector("#weekCalendarView");
 const weekCalendarGrid = document.querySelector("#weekCalendarGrid");
@@ -31,7 +34,7 @@ const weekCalendarGrid = document.querySelector("#weekCalendarGrid");
 let tasks = loadTasks();
 let editingTaskId = null;
 let currentCalendarDate = dateFilter.value ? createDateFromInput(dateFilter.value) : new Date();
-let currentCalendarView = "month";
+let currentCalendarView = "day";
 
 function generateId() {
   if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -351,9 +354,69 @@ function createCalendarDayButton(dayDate, options = {}) {
   return button;
 }
 
+function formatDayNameShort(date) {
+  return date
+    .toLocaleDateString("es-ES", {
+      weekday: "short",
+    })
+    .replace(".", "");
+}
+
+function createDayStripButton(dayDate) {
+  const dayValue = formatDateInputValue(dayDate);
+  const dayTasks = getCalendarDayTasks(dayValue);
+  const dayStatusTone = getCalendarDayTone(dayTasks);
+  const dayPriorityTone = getCalendarDayPriorityTone(dayTasks);
+  const dominantPriority = getDominantPriority(dayTasks);
+  const todayValue = formatDateInputValue(new Date());
+  const selectedDateValue = dateFilter.value;
+  const button = document.createElement("button");
+
+  button.type = "button";
+  button.className = `day-strip-btn ${dayPriorityTone} ${dayStatusTone}`.trim();
+  if (dayValue === todayValue) {
+    button.classList.add("today");
+  }
+  if (selectedDateValue && dayValue === selectedDateValue) {
+    button.classList.add("selected");
+  }
+
+  button.dataset.date = dayValue;
+  button.setAttribute(
+    "aria-label",
+    `${formatDayName(dayDate)} ${dayDate.getDate()}, ${dayDate.getFullYear()}`
+  );
+  button.setAttribute("aria-pressed", String(dayValue === selectedDateValue));
+
+  const weekday = document.createElement("span");
+  weekday.className = "day-strip-weekday";
+  weekday.textContent = formatDayNameShort(dayDate);
+
+  const number = document.createElement("span");
+  number.className = "day-strip-number";
+  number.textContent = String(dayDate.getDate());
+
+  button.append(weekday, number);
+
+  if (dayTasks.length) {
+    const badge = document.createElement("span");
+    badge.className = `day-strip-count ${dominantPriority}`;
+    badge.textContent = String(dayTasks.length);
+    badge.setAttribute("aria-hidden", "true");
+    button.appendChild(badge);
+  }
+
+  return button;
+}
+
 function updateSelectedDateSummary() {
-  if (currentCalendarView === "week" && !dateFilter.value) {
-    selectedDateSummary.textContent = `Vista semanal del ${formatWeekRange(currentCalendarDate)}. Selecciona un dia para ver rapidamente las actividades pendientes.`;
+  if (
+    (currentCalendarView === "week" || currentCalendarView === "day") &&
+    !dateFilter.value
+  ) {
+    selectedDateSummary.textContent = `Semana del ${formatWeekRange(
+      currentCalendarDate
+    )}. Selecciona un dia para filtrar la lista rapidamente.`;
     return;
   }
 
@@ -381,12 +444,15 @@ function updateSelectedDateSummary() {
 }
 
 function updateCalendarHeader() {
+  dayViewBtn.classList.toggle("is-active", currentCalendarView === "day");
   monthViewBtn.classList.toggle("is-active", currentCalendarView === "month");
   weekViewBtn.classList.toggle("is-active", currentCalendarView === "week");
+
+  dayCalendarView.classList.toggle("hidden", currentCalendarView !== "day");
   monthCalendarView.classList.toggle("hidden", currentCalendarView !== "month");
   weekCalendarView.classList.toggle("hidden", currentCalendarView !== "week");
 
-  if (currentCalendarView === "week") {
+  if (currentCalendarView === "week" || currentCalendarView === "day") {
     calendarMonthLabel.textContent = formatWeekRange(currentCalendarDate);
     prevMonthBtn.textContent = "Semana anterior";
     nextMonthBtn.textContent = "Semana siguiente";
@@ -396,6 +462,17 @@ function updateCalendarHeader() {
   calendarMonthLabel.textContent = formatCalendarMonth(currentCalendarDate);
   prevMonthBtn.textContent = "Mes anterior";
   nextMonthBtn.textContent = "Mes siguiente";
+}
+
+function renderDayStrip() {
+  dayCalendarStrip.innerHTML = "";
+  const startOfWeek = getStartOfWeek(currentCalendarDate);
+
+  for (let dayOffset = 0; dayOffset < 7; dayOffset += 1) {
+    const dayDate = new Date(startOfWeek);
+    dayDate.setDate(startOfWeek.getDate() + dayOffset);
+    dayCalendarStrip.appendChild(createDayStripButton(dayDate));
+  }
 }
 
 function renderMonthCalendar() {
@@ -442,6 +519,7 @@ function renderWeekCalendar() {
 
 function renderCalendar() {
   updateCalendarHeader();
+  renderDayStrip();
   renderMonthCalendar();
   renderWeekCalendar();
   updateSelectedDateSummary();
@@ -468,7 +546,7 @@ function handleDateFilterChange() {
 }
 
 function moveCalendarMonth(offset) {
-  if (currentCalendarView === "week") {
+  if (currentCalendarView === "week" || currentCalendarView === "day") {
     const nextWeek = new Date(currentCalendarDate);
     nextWeek.setDate(currentCalendarDate.getDate() + offset * 7);
     currentCalendarDate = nextWeek;
@@ -873,6 +951,7 @@ taskForm.addEventListener("submit", handleTaskSubmit);
 taskList.addEventListener("click", handleTaskActions);
 calendarGrid.addEventListener("click", handleCalendarDateSelection);
 weekCalendarGrid.addEventListener("click", handleCalendarDateSelection);
+dayCalendarStrip.addEventListener("click", handleCalendarDateSelection);
 enableNotificationsBtn.addEventListener("click", requestNotificationPermission);
 clearMessagesBtn.addEventListener("click", clearMessages);
 cancelEditBtn.addEventListener("click", resetForm);
@@ -885,6 +964,7 @@ clearFiltersBtn.addEventListener("click", clearFilters);
 prevMonthBtn.addEventListener("click", () => moveCalendarMonth(-1));
 nextMonthBtn.addEventListener("click", () => moveCalendarMonth(1));
 resetCalendarBtn.addEventListener("click", clearCalendarDateFilter);
+dayViewBtn.addEventListener("click", () => setCalendarView("day"));
 monthViewBtn.addEventListener("click", () => setCalendarView("month"));
 weekViewBtn.addEventListener("click", () => setCalendarView("week"));
 
