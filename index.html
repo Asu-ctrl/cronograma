@@ -166,15 +166,41 @@
             </label>
             <div class="filter-date-block">
               <p id="dateFilterHeading" class="filter-date-heading">Filtrar por fecha</p>
-              <div class="filter-date-range-grid" role="group" aria-labelledby="dateFilterHeading">
+              <div class="theme-toggle filter-date-mode-toggle" role="group" aria-label="Tipo de filtro por fecha">
+                <button
+                  type="button"
+                  id="dateFilterModeDayBtn"
+                  class="theme-toggle__btn is-active"
+                  aria-pressed="true"
+                >
+                  Dia concreto
+                </button>
+                <button
+                  type="button"
+                  id="dateFilterModeRangeBtn"
+                  class="theme-toggle__btn"
+                  aria-pressed="false"
+                >
+                  Rango
+                </button>
+              </div>
+              <div id="dateFilterDayFields">
                 <label>
-                  Desde
-                  <input id="dateRangeFrom" type="date" aria-label="Desde fecha">
+                  Fecha
+                  <input id="dateFilterDay" type="date" aria-label="Filtrar por un dia concreto">
                 </label>
-                <label>
-                  Hasta
-                  <input id="dateRangeTo" type="date" aria-label="Hasta fecha">
-                </label>
+              </div>
+              <div id="dateFilterRangeFields" class="hidden">
+                <div class="filter-date-range-grid" role="group" aria-labelledby="dateFilterHeading">
+                  <label>
+                    Desde
+                    <input id="dateRangeFrom" type="date" aria-label="Desde fecha">
+                  </label>
+                  <label>
+                    Hasta
+                    <input id="dateRangeTo" type="date" aria-label="Hasta fecha">
+                  </label>
+                </div>
               </div>
             </div>
             <label>

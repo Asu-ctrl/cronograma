@@ -448,6 +448,10 @@ h2 {
   font-weight: 700;
 }
 
+.filter-date-mode-toggle.theme-toggle {
+  width: 100%;
+}
+
 .filter-date-range-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
