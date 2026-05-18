@@ -438,24 +438,90 @@ h2 {
 .filter-date-block {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   grid-column: span 2;
+}
+
+.filter-date-block__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
 }
 
 .filter-date-heading {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
 }
 
-.filter-date-mode-toggle.theme-toggle {
-  width: 100%;
+.segmented-control {
+  display: inline-flex;
+  flex: 0 1 auto;
+  gap: 0;
+  max-width: 100%;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--analog-mode-rail);
+  border: 1px solid var(--border);
+}
+
+.segmented-control__btn {
+  flex: 0 1 auto;
+  min-height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.segmented-control__btn.is-active {
+  background: var(--analog-mode-active-bg);
+  color: var(--blue-strong);
+  box-shadow: 0 1px 3px var(--analog-mode-active-shadow);
+}
+
+.segmented-control__btn:focus-visible {
+  outline: 2px solid var(--blue-strong);
+  outline-offset: 2px;
+}
+
+.filter-date-mode-toggle.segmented-control {
+  width: auto;
 }
 
 .filter-date-range-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 520px) {
+  .filter-date-block__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-date-mode-toggle.segmented-control {
+    width: 100%;
+  }
+
+  .segmented-control__btn {
+    flex: 1 1 50%;
+    min-height: 34px;
+    font-size: 0.75rem;
+    padding: 0 6px;
+  }
 }
 
 .task-form label {
@@ -480,6 +546,10 @@ h2 {
 
 .activity-field {
   grid-column: span 2;
+}
+
+.activity-field--custom {
+  margin-top: -4px;
 }
 
 .checkbox-line {

@@ -51,7 +51,21 @@
 
         <label class="activity-field">
           Actividad
-          <input id="taskActivity" name="taskActivity" type="text" maxlength="120" placeholder="Ejemplo: entregar informe" required>
+          <select id="taskActivitySelect" required aria-controls="taskActivityCustomField">
+            <option value="">Selecciona una actividad</option>
+          </select>
+        </label>
+
+        <label id="taskActivityCustomField" class="activity-field activity-field--custom hidden">
+          Nombre de la actividad
+          <input
+            id="taskActivity"
+            name="taskActivity"
+            type="text"
+            maxlength="120"
+            placeholder="Ejemplo: entregar informe"
+            autocomplete="off"
+          >
         </label>
 
         <div class="activity-field time-range-block">
@@ -165,29 +179,35 @@
               <input id="searchFilter" type="text" placeholder="Buscar por nombre de tarea">
             </label>
             <div class="filter-date-block">
-              <p id="dateFilterHeading" class="filter-date-heading">Filtrar por fecha</p>
-              <div class="theme-toggle filter-date-mode-toggle" role="group" aria-label="Tipo de filtro por fecha">
-                <button
-                  type="button"
-                  id="dateFilterModeDayBtn"
-                  class="theme-toggle__btn is-active"
-                  aria-pressed="true"
+              <div class="filter-date-block__header">
+                <p id="dateFilterHeading" class="filter-date-heading">Filtrar por fecha</p>
+                <div
+                  class="segmented-control filter-date-mode-toggle"
+                  role="group"
+                  aria-label="Tipo de filtro por fecha"
                 >
-                  Dia concreto
-                </button>
-                <button
-                  type="button"
-                  id="dateFilterModeRangeBtn"
-                  class="theme-toggle__btn"
-                  aria-pressed="false"
-                >
-                  Rango
-                </button>
+                  <button
+                    type="button"
+                    id="dateFilterModeDayBtn"
+                    class="segmented-control__btn is-active"
+                    aria-pressed="true"
+                  >
+                    Dia especifico
+                  </button>
+                  <button
+                    type="button"
+                    id="dateFilterModeRangeBtn"
+                    class="segmented-control__btn"
+                    aria-pressed="false"
+                  >
+                    Rango personalizado
+                  </button>
+                </div>
               </div>
               <div id="dateFilterDayFields">
                 <label>
                   Fecha
-                  <input id="dateFilterDay" type="date" aria-label="Filtrar por un dia concreto">
+                  <input id="dateFilterDay" type="date" aria-label="Filtrar por un dia especifico">
                 </label>
               </div>
               <div id="dateFilterRangeFields" class="hidden">

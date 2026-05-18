@@ -1,6 +1,19 @@
 const STORAGE_KEY = "agenda-tareas-web";
 const THEME_STORAGE_KEY = "cronograma-theme";
+const ACTIVITY_CATALOG_KEY = "cronograma-actividades-catalog";
+const ACTIVITY_CUSTOM_VALUE = "__custom__";
 const ALERT_CHECK_INTERVAL_MS = 30000;
+
+const DEFAULT_ACTIVITY_CATALOG = [
+  "Reunion de equipo",
+  "Entregar informe",
+  "Revision de avances",
+  "Seguimiento de curso",
+  "Lectura bibliografica",
+  "Practica de laboratorio",
+  "Presentacion",
+  "Llamada telefonica",
+];
 
 const taskForm = document.querySelector("#taskForm");
 const taskList = document.querySelector("#taskList");
@@ -36,12 +49,15 @@ const taskTimeStartInput = document.querySelector("#taskTimeStart");
 const taskTimeEndInput = document.querySelector("#taskTimeEnd");
 const themeLightBtn = document.querySelector("#themeLightBtn");
 const themeDarkBtn = document.querySelector("#themeDarkBtn");
+const taskActivitySelect = document.querySelector("#taskActivitySelect");
+const taskActivityCustom = document.querySelector("#taskActivity");
+const taskActivityCustomField = document.querySelector("#taskActivityCustomField");
 
 let tasks = loadTasks();
 let editingTaskId = null;
-/** Falso: ningun modo de fecha activo; no se filtra por fecha hasta elegir Dia concreto o Rango. */
+/** Falso: ningun modo de fecha activo; no se filtra por fecha hasta elegir dia especifico o rango personalizado. */
 let dateFilterPanelOn = true;
-/** Solo con dateFilterPanelOn: dia concreto ("day") o rango ("range"). */
+/** Solo con dateFilterPanelOn: dia especifico ("day") o rango personalizado ("range"). */
 let dateFilterVariant = "day";
 let currentCalendarDate = new Date();
 if (dateFilterDay && dateFilterDay.value) {
@@ -172,6 +188,165 @@ function loadTasks() {
 
 function saveTasks() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function normalizeActivityName(value) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function loadActivityCatalog() {
+  try {
+    const saved = localStorage.getItem(ACTIVITY_CATALOG_KEY);
+    if (!saved) {
+      return [];
+    }
+
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.map(normalizeActivityName).filter(Boolean);
+  } catch (error) {
+    console.error("No se pudo cargar el catalogo de actividades.", error);
+    return [];
+  }
+}
+
+function saveActivityCatalog(catalog) {
+  try {
+    localStorage.setItem(ACTIVITY_CATALOG_KEY, JSON.stringify(catalog));
+  } catch (error) {
+    console.error("No se pudo guardar el catalogo de actividades.", error);
+  }
+}
+
+function collectActivitiesFromTasks() {
+  const names = new Set();
+
+  tasks.forEach((task) => {
+    const name = normalizeActivityName(task.activity);
+    if (!name) {
+      return;
+    }
+
+    const withoutCopy = name.replace(/\s*\(copia\)\s*$/i, "").trim();
+    if (withoutCopy) {
+      names.add(withoutCopy);
+    }
+  });
+
+  return [...names];
+}
+
+function getMergedActivityCatalog() {
+  const merged = new Set([
+    ...DEFAULT_ACTIVITY_CATALOG.map(normalizeActivityName).filter(Boolean),
+    ...loadActivityCatalog(),
+    ...collectActivitiesFromTasks(),
+  ]);
+
+  return [...merged].sort((first, second) => first.localeCompare(second, "es"));
+}
+
+function registerActivity(name) {
+  const normalized = normalizeActivityName(name);
+  if (!normalized) {
+    return;
+  }
+
+  const catalog = loadActivityCatalog();
+  const exists = catalog.some(
+    (item) => item.localeCompare(normalized, "es", { sensitivity: "accent" }) === 0
+  );
+
+  if (!exists) {
+    catalog.push(normalized);
+    catalog.sort((first, second) => first.localeCompare(second, "es"));
+    saveActivityCatalog(catalog);
+  }
+}
+
+function syncActivityCustomFieldVisibility() {
+  if (!taskActivitySelect || !taskActivityCustomField || !taskActivityCustom) {
+    return;
+  }
+
+  const isCustom = taskActivitySelect.value === ACTIVITY_CUSTOM_VALUE;
+  taskActivityCustomField.classList.toggle("hidden", !isCustom);
+  taskActivityCustom.required = isCustom;
+
+  if (!isCustom) {
+    taskActivityCustom.value = "";
+  }
+}
+
+function refreshActivitySelect(selectedValue = "") {
+  if (!taskActivitySelect) {
+    return;
+  }
+
+  const normalizedSelected = normalizeActivityName(selectedValue);
+  const catalog = getMergedActivityCatalog();
+  const previousValue = taskActivitySelect.value;
+  const fragment = document.createDocumentFragment();
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Selecciona una actividad";
+  fragment.appendChild(placeholder);
+
+  catalog.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    fragment.appendChild(option);
+  });
+
+  const customOption = document.createElement("option");
+  customOption.value = ACTIVITY_CUSTOM_VALUE;
+  customOption.textContent = "Otra actividad...";
+  fragment.appendChild(customOption);
+
+  taskActivitySelect.replaceChildren(fragment);
+
+  if (
+    normalizedSelected &&
+    catalog.some(
+      (item) => item.localeCompare(normalizedSelected, "es", { sensitivity: "accent" }) === 0
+    )
+  ) {
+    taskActivitySelect.value = normalizedSelected;
+  } else if (normalizedSelected) {
+    taskActivitySelect.value = ACTIVITY_CUSTOM_VALUE;
+    taskActivityCustom.value = normalizedSelected;
+  } else if (
+    previousValue &&
+    (previousValue === ACTIVITY_CUSTOM_VALUE ||
+      catalog.some((item) => item === previousValue))
+  ) {
+    taskActivitySelect.value = previousValue;
+  } else {
+    taskActivitySelect.value = "";
+  }
+
+  syncActivityCustomFieldVisibility();
+}
+
+function resolveActivityFromForm() {
+  if (!taskActivitySelect) {
+    return normalizeActivityName(taskActivityCustom?.value);
+  }
+
+  if (taskActivitySelect.value === ACTIVITY_CUSTOM_VALUE) {
+    return normalizeActivityName(taskActivityCustom?.value);
+  }
+
+  return normalizeActivityName(taskActivitySelect.value);
+}
+
+function setFormActivity(activityName) {
+  refreshActivitySelect(activityName);
 }
 
 function getTaskTimeStart(task) {
@@ -754,6 +929,7 @@ function resetForm() {
   editingTaskId = null;
   taskForm.reset();
   document.querySelector("#taskAlarm").checked = true;
+  refreshActivitySelect();
   updateFormMode();
 }
 
@@ -1009,11 +1185,11 @@ function updateTaskList() {
   renderClosestAlertPanel();
 }
 
-function createTaskFromForm(formData) {
+function createTaskFromForm(formData, activity) {
   return {
     id: generateId(),
     date: formData.get("taskDate"),
-    activity: formData.get("taskActivity").trim(),
+    activity,
     timeStart: formData.get("taskTimeStart"),
     timeEnd: formData.get("taskTimeEnd"),
     reminderMinutes: Number(formData.get("taskReminder")),
@@ -1025,9 +1201,9 @@ function createTaskFromForm(formData) {
   };
 }
 
-function updateTaskFromForm(task, formData) {
+function updateTaskFromForm(task, formData, activity) {
   task.date = formData.get("taskDate");
-  task.activity = formData.get("taskActivity").trim();
+  task.activity = activity;
   task.timeStart = formData.get("taskTimeStart");
   task.timeEnd = formData.get("taskTimeEnd");
   delete task.time;
@@ -1049,7 +1225,7 @@ function startEditTask(taskId) {
 
   editingTaskId = task.id;
   document.querySelector("#taskDate").value = task.date;
-  document.querySelector("#taskActivity").value = task.activity;
+  setFormActivity(task.activity);
   const start = getTaskTimeStart(task);
   const end = getTaskTimeEnd(task);
   taskTimeStartInput.value = start;
@@ -1071,9 +1247,9 @@ function handleTaskSubmit(event) {
     return;
   }
 
-  const newTask = createTaskFromForm(formData);
+  const activity = resolveActivityFromForm();
 
-  if (!newTask.activity) {
+  if (!activity) {
     showFormFeedback("La actividad no puede estar vacia.", "danger");
     return;
   }
@@ -1087,16 +1263,21 @@ function handleTaskSubmit(event) {
       return;
     }
 
-    updateTaskFromForm(taskToUpdate, formData);
+    updateTaskFromForm(taskToUpdate, formData, activity);
+    registerActivity(activity);
     saveTasks();
+    refreshActivitySelect();
     updateTaskList();
     showFormFeedback(`Tarea actualizada: ${taskToUpdate.activity}.`, "success");
     resetForm();
     return;
   }
 
+  const newTask = createTaskFromForm(formData, activity);
   tasks.push(newTask);
+  registerActivity(activity);
   saveTasks();
+  refreshActivitySelect();
   updateTaskList();
   resetForm();
 
@@ -1235,6 +1416,10 @@ function checkTaskAlerts() {
   task.notified = true;
   saveTasks();
   updateTaskList();
+}
+
+if (taskActivitySelect) {
+  taskActivitySelect.addEventListener("change", syncActivityCustomFieldVisibility);
 }
 
 taskForm.addEventListener("submit", handleTaskSubmit);
@@ -1715,6 +1900,7 @@ function initAnalogScheduleDialog() {
 initAnalogScheduleDialog();
 
 initTheme();
+refreshActivitySelect();
 syncDateFilterPanelUI();
 updateFormMode();
 updateTaskList();
